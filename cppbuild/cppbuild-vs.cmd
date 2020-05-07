@@ -3,6 +3,7 @@ setlocal EnableDelayedExpansion
 
 set SOURCE_DIR=%CD%
 set BUILD_DIR=%CD%\cppbuild\Release
+set BUILD_CONFIG=Release
 set "EXTRA_CMAKE_ARGS="
 
 for %%o in (%*) do (
@@ -24,6 +25,23 @@ for %%o in (%*) do (
         set PROCESSED=1
     )
 
+    if "%%o"=="--build-archive-api" (
+        set EXTRA_CMAKE_ARGS=!EXTRA_CMAKE_ARGS! -DBUILD_AERON_ARCHIVE_API=ON
+        set PROCESSED=1
+    )
+
+    if "%%o"=="--slow-system-tests" (
+        set EXTRA_CMAKE_ARGS=!EXTRA_CMAKE_ARGS! -DAERON_SLOW_SYSTEM_TESTS=ON
+        set PROCESSED=1
+    )
+
+    if "%%o"=="--debug-build" (
+        set EXTRA_CMAKE_ARGS=!EXTRA_CMAKE_ARGS! -DCMAKE_BUILD_TYPE=Debug
+        set BUILD_DIR=%CD%\cppbuild\Debug
+        set BUILD_CONFIG=Debug
+        set PROCESSED=1
+    )
+
     if "%%o"=="--build-aeron-driver" (
         echo "Enabling building of aeron driver is now the default"
         set PROCESSED=1
@@ -31,6 +49,11 @@ for %%o in (%*) do (
 
     if "%%o"=="--link-samples-client-shared" (
         set EXTRA_CMAKE_ARGS=!EXTRA_CMAKE_ARGS! -DLINK_SAMPLES_CLIENT_SHARED=ON
+        set PROCESSED=1
+    )
+
+    if "%%o"=="--no-system-tests" (
+        set EXTRA_CMAKE_ARGS=!EXTRA_CMAKE_ARGS! -DAERON_SYSTEM_TESTS=OFF
         set PROCESSED=1
     )
 )
@@ -45,8 +68,8 @@ pushd %BUILD_DIR%
 cmake %EXTRA_CMAKE_ARGS% %SOURCE_DIR%
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 
-cmake --build . --config Release
+cmake --build . --config %BUILD_CONFIG%
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 
-ctest -C Release --output-on-failure
+ctest -C %BUILD_CONFIG% --output-on-failure
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
