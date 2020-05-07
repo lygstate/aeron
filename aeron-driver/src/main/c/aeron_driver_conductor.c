@@ -19,6 +19,7 @@
 #include <errno.h>
 #include "util/aeron_math.h"
 #include "util/aeron_arrayutil.h"
+#include "util/aeron_uuid.h"
 #include "aeron_driver_conductor.h"
 #include "aeron_position.h"
 #include "aeron_driver_sender.h"
