@@ -80,7 +80,7 @@ target_link_libraries(Ping
     ${CLIENT_LINK_LIB}
     ${HDRHISTOGRAM_LIBS})
 
-add_dependencies(Ping hdr_histogram)
+add_dependencies(Ping hdr_histogram_static)
 
 target_include_directories(BasicPublisherW
     PUBLIC ${AERON_C_CLIENT_SOURCE_PATH} ${AERON_CLIENT_WRAPPER_SOURCE_PATH})
@@ -113,7 +113,7 @@ target_link_libraries(PingW
     ${CLIENT_WRAPPER_LINK_LIB} ${C_CLIENT_LINK_LIB}
     ${HDRHISTOGRAM_LIBS})
 
-add_dependencies(PingW hdr_histogram)
+add_dependencies(PingW hdr_histogram_static)
 
 target_include_directories(Throughput
     PUBLIC ${AERON_CLIENT_SOURCE_PATH})
@@ -156,7 +156,7 @@ target_include_directories(TimeTests
 target_link_libraries(TimeTests
     ${CMAKE_THREAD_LIBS_INIT})
 
-add_dependencies(PingPong hdr_histogram)
+add_dependencies(PingPong hdr_histogram_static)
 
 if (AERON_INSTALL_TARGETS)
     install(
