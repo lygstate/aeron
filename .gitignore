@@ -5,6 +5,7 @@ GPATH
 prop
 out
 classes
+bin
 
 # OS X
 .DS_Store
