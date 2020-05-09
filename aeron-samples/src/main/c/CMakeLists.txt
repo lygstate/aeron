@@ -66,7 +66,7 @@ target_link_libraries(cping
     ${CLIENT_LINK_LIB}
     ${HDRHISTOGRAM_LIBS})
 
-add_dependencies(cping hdr_histogram)
+add_dependencies(cping hdr_histogram_static)
 
 if (AERON_INSTALL_TARGETS)
     install(
