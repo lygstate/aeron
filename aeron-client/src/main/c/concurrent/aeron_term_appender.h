@@ -21,6 +21,7 @@
 #include <inttypes.h>
 
 #include "aeronc.h"
+#include "concurrent/aeron_logbuffer_descriptor.h"
 #include "util/aeron_fileutil.h"
 #include "util/aeron_error.h"
 

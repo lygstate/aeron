@@ -22,6 +22,7 @@
 #include "aeron_driver_common.h"
 #include "aeronmd.h"
 #include "util/aeron_fileutil.h"
+#include "util/aeron_map_raw_log.h"
 #include "concurrent/aeron_spsc_concurrent_array_queue.h"
 #include "concurrent/aeron_mpsc_concurrent_array_queue.h"
 #include "concurrent/aeron_mpsc_rb.h"
