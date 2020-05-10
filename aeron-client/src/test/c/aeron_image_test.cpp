@@ -53,7 +53,7 @@ public:
             aeron_log_buffer_delete(m_image->log_buffer);
             aeron_image_delete(m_image);
 
-            ::unlink(m_filename.c_str());
+            aeron_log_buffer_filename_delete(m_filename.c_str());
         }
     }
 

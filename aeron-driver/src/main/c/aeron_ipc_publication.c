@@ -57,11 +57,13 @@ int aeron_ipc_publication_create(
         return -1;
     }
 
-    _pub->log_file_name_length = aeron_ipc_publication_location(
-        _pub->log_file_name, sizeof(_pub->log_file_name), context->aeron_dir, registration_id);
+    _pub->log_file_name_length = aeron_log_buffer_filename_create(context->anonymous_file_mapping ? NULL : context->aeron_dir,
+        _pub->log_file_name, sizeof(_pub->log_file_name) - 1, AERON_LOG_BUFFER_TYPE_IPC,
+        registration_id,  params->term_length, context->file_page_size);
     if (context->map_raw_log_func(
         &_pub->mapped_raw_log, _pub->log_file_name, params->is_sparse, params->term_length, context->file_page_size) < 0)
     {
+        aeron_log_buffer_filename_delete(_pub->log_file_name);
         aeron_set_err(aeron_errcode(), "error mapping IPC raw log %s: %s", _pub->log_file_name, aeron_errmsg());
         aeron_free(_pub);
         return -1;
