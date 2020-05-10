@@ -38,18 +38,16 @@ namespace test
 std::string tempFileName()
 {
     char filename[AERON_MAX_PATH];
-
-    aeron_temp_filename(filename, sizeof(filename));
+    aeron_log_buffer_filename_create(NULL, filename, sizeof(filename) - 1, AERON_LOG_BUFFER_TYPE_IPC,
+        rand(), AERON_LOGBUFFER_TERM_MIN_LENGTH, FILE_PAGE_SIZE);
     return std::string(filename);
 }
 
 void createLogFile(std::string &filename)
 {
-    aeron_mapped_file_t mappedFile = {
-        nullptr,
-        AERON_LOGBUFFER_TERM_MIN_LENGTH * 3 + AERON_LOGBUFFER_META_DATA_LENGTH };
+    aeron_mapped_file_t mappedFile = { 0, 0 };
 
-    if (aeron_map_new_file(&mappedFile, filename.c_str(), false) < 0)
+    if (aeron_map_new_file(&mappedFile, filename.c_str(), AERON_LOGBUFFER_TERM_MIN_LENGTH * 3 + AERON_LOGBUFFER_META_DATA_LENGTH , false) < 0)
     {
         throw std::runtime_error("could not create log file: " + std::string(aeron_errmsg()));
     }

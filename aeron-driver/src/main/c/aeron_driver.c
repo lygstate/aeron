@@ -155,7 +155,7 @@ int aeron_driver_ensure_dir_is_recreated(aeron_driver_context_t *context)
             aeron_mapped_file_t cnc_mmap = { NULL, 0 };
 
             snprintf(buffer, sizeof(buffer) - 1, "%s/%s", dirname, AERON_CNC_FILE);
-            if (aeron_map_existing_file(&cnc_mmap, buffer) < 0)
+            if (aeron_map_existing_file(&cnc_mmap, buffer, 0, 0, false) < 0)
             {
                 snprintf(buffer, sizeof(buffer) - 1, "INFO: failed to mmap CnC file");
                 log_func(buffer);
@@ -189,20 +189,6 @@ int aeron_driver_ensure_dir_is_recreated(aeron_driver_context_t *context)
         return -1;
     }
 
-    snprintf(buffer, sizeof(buffer) - 1, "%s/%s", dirname, AERON_PUBLICATIONS_DIR);
-    if (aeron_mkdir(buffer, S_IRWXU | S_IRWXG | S_IRWXO) != 0)
-    {
-        aeron_set_err_from_last_err_code("mkdir %s", buffer);
-        return -1;
-    }
-
-    snprintf(buffer, sizeof(buffer) - 1, "%s/%s", dirname, AERON_IMAGES_DIR);
-    if (aeron_mkdir(buffer, S_IRWXU | S_IRWXG | S_IRWXO) != 0)
-    {
-        aeron_set_err_from_last_err_code("mkdir %s", buffer);
-        return -1;
-    }
-
     return 0;
 }
 
@@ -217,7 +203,7 @@ void aeron_driver_fill_cnc_metadata(aeron_driver_context_t *context)
     metadata->error_log_buffer_length = (int32_t)context->error_buffer_length;
     metadata->client_liveness_timeout = (int64_t)context->client_liveness_timeout_ns;
     metadata->start_timestamp = context->epoch_clock();
-    metadata->pid = getpid();
+    metadata->pid = aeron_get_pid();
 
     context->to_driver_buffer = aeron_cnc_to_driver_buffer(metadata);
     context->to_clients_buffer = aeron_cnc_to_clients_buffer(metadata);
@@ -231,12 +217,9 @@ int aeron_driver_create_cnc_file(aeron_driver_t *driver)
     char buffer[AERON_MAX_PATH];
     size_t cnc_file_length = aeron_cnc_length(driver->context);
 
-    driver->context->cnc_map.addr = NULL;
-    driver->context->cnc_map.length = cnc_file_length;
-
     snprintf(buffer, sizeof(buffer) - 1, "%s/%s", driver->context->aeron_dir, AERON_CNC_FILE);
 
-    if (aeron_map_new_file(&driver->context->cnc_map, buffer, true) < 0)
+    if (aeron_map_new_file(&driver->context->cnc_map, buffer, cnc_file_length, true) < 0)
     {
         aeron_set_err(aeron_errcode(), "could not map CnC file: %s", aeron_errmsg());
         return -1;
@@ -250,14 +233,11 @@ int aeron_driver_create_cnc_file(aeron_driver_t *driver)
 int aeron_driver_create_loss_report_file(aeron_driver_t *driver)
 {
     char buffer[AERON_MAX_PATH];
-
-    driver->context->loss_report.addr = NULL;
-    driver->context->loss_report.length =
-        AERON_ALIGN(driver->context->loss_report_length, driver->context->file_page_size);
+    size_t loss_report_file_length = AERON_ALIGN(driver->context->loss_report_length, driver->context->file_page_size);
 
     snprintf(buffer, sizeof(buffer) - 1, "%s/%s", driver->context->aeron_dir, AERON_LOSS_REPORT_FILE);
 
-    if (aeron_map_new_file(&driver->context->loss_report, buffer, true) < 0)
+    if (aeron_map_new_file(&driver->context->loss_report, buffer, loss_report_file_length, true) < 0)
     {
         aeron_set_err(aeron_errcode(), "could not map loss report file: %s", aeron_errmsg());
         return -1;

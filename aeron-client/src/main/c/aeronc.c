@@ -61,7 +61,7 @@ int aeron_client_connect_to_driver(aeron_mapped_file_t *cnc_mmap, aeron_context_
             aeron_micro_sleep(16 * 1000);
         }
 
-        if (aeron_map_existing_file(cnc_mmap, filename) < 0)
+        if (aeron_map_existing_file(cnc_mmap, filename, 0, 0, false) < 0)
         {
             aeron_set_err(aeron_errcode(), "CnC file could not be mmapped: %s", aeron_errmsg());
             return -1;
@@ -112,7 +112,7 @@ int aeron_client_connect_to_driver(aeron_mapped_file_t *cnc_mmap, aeron_context_
                 if (file_size_computed != (int64_t)cnc_mmap->length)
                 {
                     aeron_unmap(cnc_mmap);
-                    if (aeron_map_existing_file(cnc_mmap, filename) < 0)
+                    if (aeron_map_existing_file(cnc_mmap, filename, file_size_computed, 0, false) < 0)
                     {
                         aeron_set_err(aeron_errcode(), "CnC file could not be mmapped: %s", aeron_errmsg());
                         return -1;

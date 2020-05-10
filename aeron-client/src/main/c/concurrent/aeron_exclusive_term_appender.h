@@ -24,6 +24,7 @@
 #include "util/aeron_fileutil.h"
 #include "concurrent/aeron_atomic.h"
 #include "util/aeron_error.h"
+#include "util/aeron_map_raw_log.h"
 
 #define AERON_EXCLUSIVE_TERM_APPENDER_FAILED (-2)
 

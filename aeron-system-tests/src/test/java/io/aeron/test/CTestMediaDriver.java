@@ -115,6 +115,7 @@ public final class CTestMediaDriver implements TestMediaDriver
         final ProcessBuilder pb = new ProcessBuilder(f.getAbsolutePath());
         final HashMap<String, String> environment = new HashMap<>();
 
+        environment.put("AERON_ANONYMOUS_FILE_MAPPING", String.valueOf(false));
         environment.put("AERON_CLIENT_LIVENESS_TIMEOUT", String.valueOf(context.clientLivenessTimeoutNs()));
         environment.put("AERON_IMAGE_LIVENESS_TIMEOUT", String.valueOf(context.imageLivenessTimeoutNs()));
         environment.put("AERON_DIR", context.aeronDirectoryName());

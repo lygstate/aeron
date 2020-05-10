@@ -189,7 +189,7 @@ public:
         m_context->cnc_map.addr = nullptr;
         aeron_context_close(m_context);
 
-        ::unlink(m_logFileName.c_str());
+        aeron_log_buffer_filename_delete(m_logFileName.c_str());
     }
 
     static void ToDriverHandler(int32_t type_id, const void *buffer, size_t length, void *clientd)

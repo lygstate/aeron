@@ -56,7 +56,7 @@ public:
         std::for_each(m_filenames.begin(), m_filenames.end(),
             [&](std::string &filename)
             {
-                ::unlink(filename.c_str());
+                aeron_log_buffer_filename_delete(filename.c_str());
             });
     }
 
