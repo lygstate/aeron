@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-#include <cstdint>
 #include <cstdio>
-#include <csignal>
 #include <thread>
+
+#define __STDC_FORMAT_MACROS
+
 #include <cinttypes>
+#include <csignal>
 
 #include "util/CommandOptionParser.h"
 #include "concurrent/BusySpinIdleStrategy.h"
 #include "Configuration.h"
 #include "RateReporter.h"
-#include "FragmentAssembler.h"
 #include "Aeron.h"
 
 using namespace aeron::util;
@@ -32,23 +33,23 @@ using namespace aeron;
 
 std::atomic<bool> running(true);
 
-void sigIntHandler(int)
+void sigIntHandler(int param)
 {
     running = false;
 }
 
-static const char optHelp = 'h';
-static const char optPrefix = 'p';
-static const char optChannel = 'c';
+static const char optHelp     = 'h';
+static const char optPrefix   = 'p';
+static const char optChannel  = 'c';
 static const char optStreamId = 's';
-static const char optFrags = 'f';
+static const char optMessages = 'm';
+static const char optLength   = 'L';
 
 struct Settings
 {
     std::string dirPrefix = "";
     std::string channel = samples::configuration::DEFAULT_CHANNEL;
     std::int32_t streamId = samples::configuration::DEFAULT_STREAM_ID;
-    int fragmentCountLimit = samples::configuration::DEFAULT_FRAGMENT_COUNT_LIMIT;
 };
 
 Settings parseCmdLine(CommandOptionParser &cp, int argc, char **argv)
@@ -65,25 +66,29 @@ Settings parseCmdLine(CommandOptionParser &cp, int argc, char **argv)
     s.dirPrefix = cp.getOption(optPrefix).getParam(0, s.dirPrefix);
     s.channel = cp.getOption(optChannel).getParam(0, s.channel);
     s.streamId = cp.getOption(optStreamId).getParamAsInt(0, 1, INT32_MAX, s.streamId);
-    s.fragmentCountLimit = cp.getOption(optFrags).getParamAsInt(0, 1, INT32_MAX, s.fragmentCountLimit);
 
     return s;
 }
 
-void printRate(double messagesPerSec, double bytesPerSec, std::int64_t totalFragments, std::int64_t totalBytes)
-{
-    std::printf(
-        "%.04g msgs/sec, %.04g bytes/sec, totals %.0lf messages %.6lf MB payloads\n",
-        messagesPerSec, bytesPerSec, totalFragments / 1.0, totalBytes / (1024.0 * 1024));
-}
+typedef std::function<int()> on_new_length_t;
 
-fragment_handler_t rateReporterHandler(RateReporter &rateReporter)
+static std::random_device randomDevice;
+static std::default_random_engine randomEngine(randomDevice());
+static std::uniform_int_distribution<int> uniformLengthDistribution;
+
+on_new_length_t composeLengthGenerator(bool random, int max)
 {
-    return
-        [&](AtomicBuffer &, util::index_t, util::index_t length, Header &)
-        {
-            rateReporter.onMessage(1, length);
-        };
+    if (random)
+    {
+        std::uniform_int_distribution<int>::param_type param(sizeof(std::int64_t), max);
+        uniformLengthDistribution.param(param);
+
+        return [&]() { return uniformLengthDistribution(randomEngine); };
+    }
+    else
+    {
+        return [max]() { return max; };
+    }
 }
 
 int main(int argc, char **argv)
@@ -93,7 +98,6 @@ int main(int argc, char **argv)
     cp.addOption(CommandOption(optPrefix,   1, 1, "dir             Prefix directory for aeron driver."));
     cp.addOption(CommandOption(optChannel,  1, 1, "channel         Channel."));
     cp.addOption(CommandOption(optStreamId, 1, 1, "streamId        Stream ID."));
-    cp.addOption(CommandOption(optFrags,    1, 1, "limit           Fragment Count Limit."));
 
     signal(SIGINT, sigIntHandler);
 
@@ -101,7 +105,9 @@ int main(int argc, char **argv)
     {
         Settings settings = parseCmdLine(cp, argc, argv);
 
-        std::cout << "Subscribing to channel " << settings.channel << " on Stream ID " << settings.streamId << std::endl;
+        std::cout << "Discovery at " 
+                  << settings.channel << " on stream ID "
+                  << settings.streamId << std::endl;
 
         aeron::Context context;
 
@@ -109,7 +115,13 @@ int main(int argc, char **argv)
         {
             context.aeronDir(settings.dirPrefix);
         }
+        int imageCount = 0;
 
+        context.newPublicationHandler(
+            [](const std::string &channel, std::int32_t streamId, std::int32_t sessionId, std::int64_t correlationId)
+            {
+                std::cout << "Publication: " << channel << " " << correlationId << ":" << streamId << ":" << sessionId << std::endl;
+            });
         context.newSubscriptionHandler(
             [](const std::string &channel, std::int32_t streamId, std::int64_t correlationId)
             {
@@ -117,52 +129,61 @@ int main(int argc, char **argv)
             });
 
         context.availableImageHandler(
-            [](Image &image)
+            [&](Image &image)
             {
                 std::cout << "Available image correlationId=" << image.correlationId() << " sessionId=" << image.sessionId();
                 std::cout << " at position=" << image.position() << " from " << image.sourceIdentity() << std::endl;
+                std::cout << std::flush;
+                imageCount += 1;
             });
 
         context.unavailableImageHandler(
-            [](Image &image)
+            [&](Image &image)
             {
                 std::cout << "Unavailable image on correlationId=" << image.correlationId() << " sessionId=" << image.sessionId();
                 std::cout << " at position=" << image.position() << " from " << image.sourceIdentity() << std::endl;
+                std::cout << std::flush;
+                imageCount -= 1;
             });
-
         Aeron aeron(context);
 
-        // add the subscription to start the process
-        std::int64_t id = aeron.addSubscription(settings.channel, settings.streamId);
+        std::int64_t idPublication = aeron.addPublication(settings.channel, settings.streamId);
 
-        std::shared_ptr<Subscription> subscription = aeron.findSubscription(id);
-        // wait for the subscription to be valid
-        while (!subscription)
+        std::int64_t idSubscription = aeron.addSubscription(settings.channel, settings.streamId);
+
+        std::shared_ptr<Publication> publication;
+        for(;;)
+        {
+            publication = aeron.findPublication(idPublication);
+            if (publication)
+            {
+                break;;
+            }
+            std::this_thread::yield();
+        }
+
+        std::shared_ptr<Subscription> subscription;
+        for(;;)
+        {
+            subscription = aeron.findSubscription(idSubscription);
+            if (subscription)
+            {
+                break;;
+            }
+            std::this_thread::yield();
+        }
+
+        while (imageCount == 0)
         {
             std::this_thread::yield();
-            subscription = aeron.findSubscription(id);
         }
 
-        BusySpinIdleStrategy idleStrategy;
-        RateReporter rateReporter(std::chrono::seconds(1), printRate);
-        FragmentAssembler fragmentAssembler(rateReporterHandler(rateReporter));
-        fragment_handler_t handler = fragmentAssembler.handler();
-
-        std::thread rateReporterThread(
-            [&]()
-            {
-                rateReporter.run();
-            });
-
-        while (running)
+        do
         {
-            idleStrategy.idle(subscription->poll(handler, settings.fragmentCountLimit));
+            std::this_thread::yield();
         }
+        while (running && continuationBarrier("Execute again?"));
 
-        std::cout << "Shutting down...\n";
-
-        rateReporter.halt();
-        rateReporterThread.join();
     }
     catch (const CommandOptionException &e)
     {

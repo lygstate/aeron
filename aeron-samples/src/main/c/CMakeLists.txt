@@ -43,6 +43,7 @@ add_executable(streaming_publisher streaming_publisher.c ${HEADERS} ${SOURCES})
 add_executable(streaming_exclusive_publisher streaming_exclusive_publisher.c ${HEADERS} ${SOURCES})
 add_executable(cpong cpong.c ${HEADERS} ${SOURCES})
 add_executable(cping cping.c ${HEADERS} ${SOURCES})
+add_executable(udp_sd udp_sd.c)
 
 target_link_libraries(basic_publisher
     ${CLIENT_LINK_LIB})
@@ -67,6 +68,9 @@ target_link_libraries(cping
     ${HDRHISTOGRAM_LIBS})
 
 add_dependencies(cping hdr_histogram_static)
+
+target_link_libraries(udp_sd
+    ${CLIENT_LINK_LIB})
 
 if (AERON_INSTALL_TARGETS)
     install(
