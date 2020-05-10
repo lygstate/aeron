@@ -102,6 +102,7 @@ SET(C_CLIENT_SOURCE
     ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_error.c
     ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_fileutil.c
     ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_http_util.c
+    ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_map_raw_log.c
     ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_math.c
     ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_netutil.c
     ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_parse_util.c
@@ -168,6 +169,7 @@ set(C_CLIENT_HEADERS
     ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_error.h
     ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_fileutil.h
     ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_http_util.h
+    ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_map_raw_log.h
     ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_math.h
     ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_netutil.h
     ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_parse_util.h

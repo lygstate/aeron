@@ -61,6 +61,7 @@ set(SOURCE
     util/aeron_error.c
     util/aeron_fileutil.c
     util/aeron_http_util.c
+    util/aeron_map_raw_log.c
     util/aeron_math.c
     util/aeron_netutil.c
     util/aeron_parse_util.c
@@ -126,6 +127,7 @@ set(HEADERS
     util/aeron_error.h
     util/aeron_fileutil.h
     util/aeron_http_util.h
+    util/aeron_map_raw_log.h
     util/aeron_math.h
     util/aeron_netutil.h
     util/aeron_parse_util.h

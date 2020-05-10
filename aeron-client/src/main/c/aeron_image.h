@@ -22,6 +22,7 @@
 #include "aeron_agent.h"
 #include "aeron_context.h"
 #include "aeron_client_conductor.h"
+#include "concurrent/aeron_logbuffer_descriptor.h"
 
 typedef struct aeron_image_stct
 {
