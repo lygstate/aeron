@@ -30,6 +30,7 @@ set(HEADERS
 
 add_executable(BasicPublisher BasicPublisher.cpp ${HEADERS})
 add_executable(BasicSubscriber BasicSubscriber.cpp ${HEADERS})
+add_executable(Bench Bench.cpp ${HEADERS})
 add_executable(StreamingPublisher StreamingPublisher.cpp ${HEADERS})
 add_executable(RateSubscriber RateSubscriber.cpp ${HEADERS})
 add_executable(Pong Pong.cpp ${HEADERS})
@@ -48,6 +49,7 @@ add_executable(LossStat LossStat.cpp ${HEADERS})
 add_executable(DriverTool DriverTool.cpp ${HEADERS})
 add_executable(ExclusiveThroughput ExclusiveThroughput.cpp ${HEADERS})
 add_executable(PingPong PingPong.cpp ${HEADERS})
+add_executable(ServiceDiscovery ServiceDiscovery.cpp ${HEADERS})
 
 target_include_directories(BasicPublisher
     PUBLIC ${AERON_CLIENT_SOURCE_PATH})
@@ -58,6 +60,10 @@ target_include_directories(BasicSubscriber
     PUBLIC ${AERON_CLIENT_SOURCE_PATH})
 target_link_libraries(BasicSubscriber
     ${CLIENT_LINK_LIB})
+
+target_link_libraries(Bench
+    ${CLIENT_LINK_LIB}
+    ${HDRHISTOGRAM_LIBS})
 
 target_include_directories(StreamingPublisher
     PUBLIC ${AERON_CLIENT_SOURCE_PATH})
@@ -80,6 +86,7 @@ target_link_libraries(Ping
     ${CLIENT_LINK_LIB}
     ${HDRHISTOGRAM_LIBS})
 
+add_dependencies(Bench hdr_histogram_static)
 add_dependencies(Ping hdr_histogram_static)
 
 target_include_directories(BasicPublisherW
@@ -157,6 +164,9 @@ target_link_libraries(TimeTests
     ${CMAKE_THREAD_LIBS_INIT})
 
 add_dependencies(PingPong hdr_histogram_static)
+
+target_link_libraries(ServiceDiscovery
+    ${CLIENT_LINK_LIB})
 
 if (AERON_INSTALL_TARGETS)
     install(
