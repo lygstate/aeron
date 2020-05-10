@@ -1209,7 +1209,7 @@ bool aeron_is_driver_active(const char *dirname, int64_t timeout_ms, aeron_log_f
         log_func(buffer);
 
         snprintf(buffer, sizeof(buffer) - 1, "%s/%s", dirname, AERON_CNC_FILE);
-        if (aeron_map_existing_file(&cnc_map, buffer) < 0)
+        if (aeron_map_existing_file(&cnc_map, buffer, 0, 0, false) < 0)
         {
             snprintf(buffer, sizeof(buffer) - 1, "INFO: failed to mmap CnC file");
             log_func(buffer);

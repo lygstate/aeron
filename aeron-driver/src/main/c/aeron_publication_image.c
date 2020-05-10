@@ -108,11 +108,13 @@ int aeron_publication_image_create(
         return -1;
     }
 
-    _image->log_file_name_length = aeron_publication_image_location(
-        _image->log_file_name, sizeof(_image->log_file_name), context->aeron_dir, correlation_id);
+    _image->log_file_name_length = aeron_log_buffer_filename_create(context->anonymous_file_mapping ? NULL : context->aeron_dir,
+        _image->log_file_name, sizeof(_image->log_file_name) - 1, AERON_LOG_BUFFER_TYPE_IMAGE,
+        correlation_id, (int64_t)term_buffer_length, context->file_page_size);
     if (context->map_raw_log_func(
         &_image->mapped_raw_log, _image->log_file_name, is_sparse, (uint64_t)term_buffer_length, context->file_page_size) < 0)
     {
+        aeron_log_buffer_filename_delete(_image->log_file_name);
         aeron_set_err(aeron_errcode(), "error mapping image raw log %s: %s", _image->log_file_name, aeron_errmsg());
         aeron_free(_image);
         return -1;

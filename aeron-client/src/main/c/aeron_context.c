@@ -25,11 +25,6 @@
 #include "util/aeron_fileutil.h"
 #include "aeron_cnc_file_descriptor.h"
 #include "command/aeron_control_protocol.h"
-
-#if defined(AERON_COMPILER_MSVC)
-#include <io.h>
-#endif
-
 #include "aeron_alloc.h"
 #include "aeron_context.h"
 #include "util/aeron_error.h"
@@ -428,7 +423,7 @@ int aeron_context_request_driver_termination(const char *directory, const uint8_
     if (file_length > min_length)
     {
         aeron_mapped_file_t cnc_mmap;
-        if (aeron_map_existing_file(&cnc_mmap, filename) < 0)
+        if (aeron_map_existing_file(&cnc_mmap, filename, 0, 0, false) < 0)
         {
             aeron_set_err_from_last_err_code("Failed to map cnc for driver termination");
             return aeron_errcode();
