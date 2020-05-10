@@ -87,13 +87,13 @@ Settings parseCmdLine(CommandOptionParser &cp, int argc, char **argv)
 
 std::atomic<bool> printingActive;
 
-void printRate(double messagesPerSec, double bytesPerSec, long totalFragments, long totalBytes)
+void printRate(double messagesPerSec, double bytesPerSec, int64_t totalFragments, int64_t totalBytes)
 {
     if (printingActive)
     {
         std::printf(
-            "%.04g msgs/sec, %.04g bytes/sec, totals %ld messages %ld MB payloads\n",
-            messagesPerSec, bytesPerSec, totalFragments, totalBytes / (1024 * 1024));
+            "%.04g msgs/sec, %.04g bytes/sec, totals %.0lf messages %.6lf MB payloads\n",
+            messagesPerSec, bytesPerSec, totalFragments/1.0, totalBytes / (1024.0 * 1024));
     }
 }
 

@@ -190,6 +190,7 @@ int main(int argc, char **argv)
         {
             context.aeronDir(settings.dirPrefix);
         }
+        const steady_clock::time_point subs_start = steady_clock::now();
 
         context.newSubscriptionHandler(
             [](const std::string &channel, std::int32_t streamId, std::int64_t correlationId)
@@ -279,6 +280,8 @@ int main(int argc, char **argv)
                     idleStrategy.idle(image.poll(ping_handler, settings.fragmentCountLimit));
                 }
             });
+        std::int64_t nanoDuration = duration<std::int64_t, std::nano>(steady_clock::now() - subs_start).count();
+        std::cout << "sub finished:" << nanoDuration / 1e9 << std::endl;
 
         if (settings.numberOfWarmupMessages > 0)
         {
