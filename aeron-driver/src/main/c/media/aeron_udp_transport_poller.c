@@ -177,8 +177,7 @@ int aeron_udp_transport_poller_remove(aeron_udp_transport_poller_t *poller, aero
 
 int aeron_udp_transport_poller_poll(
     aeron_udp_transport_poller_t *poller,
-    struct mmsghdr *msgvec,
-    size_t vlen,
+    aeron_udp_channel_recv_buffers_t *msgvec,
     int64_t *bytes_rcved,
     aeron_udp_transport_recv_func_t recv_func,
     aeron_udp_channel_transport_recvmmsg_func_t recvmmsg_func,
@@ -191,7 +190,7 @@ int aeron_udp_transport_poller_poll(
         for (size_t i = 0, length = poller->transports.length; i < length; i++)
         {
             int recv_result = recvmmsg_func(
-                poller->transports.array[i].transport, msgvec, vlen, bytes_rcved, recv_func, clientd);
+                poller->transports.array[i].transport, msgvec, bytes_rcved, recv_func, clientd);
             if (recv_result < 0)
             {
                 return recv_result;
@@ -228,7 +227,7 @@ int aeron_udp_transport_poller_poll(
                 if (poller->epoll_events[i].events & EPOLLIN)
                 {
                     int recv_result = recvmmsg_func(
-                        poller->epoll_events[i].data.ptr, msgvec, vlen, bytes_rcved, recv_func, clientd);
+                        poller->epoll_events[i].data.ptr, msgvec, bytes_rcved, recv_func, clientd);
 
                     if (recv_result < 0)
                     {
@@ -268,7 +267,7 @@ int aeron_udp_transport_poller_poll(
                 if (poller->pollfds[i].revents & POLLIN)
                 {
                     int recv_result = recvmmsg_func(
-                        poller->transports.array[i].transport, msgvec, vlen, bytes_rcved, recv_func, clientd);
+                        poller->transports.array[i].transport, msgvec, bytes_rcved, recv_func, clientd);
 
                     if (recv_result < 0)
                     {
