@@ -338,6 +338,7 @@ int aeron_network_publication_heartbeat_message_check(
         data_header->session_id = publication->session_id;
         data_header->stream_id = publication->stream_id;
         data_header->term_id = active_term_id;
+        printf("Send heart beat %d %d\n", active_term_id, term_offset);
         data_header->reserved_value = 0l;
 
         if (signal_end_of_stream)
@@ -417,17 +418,18 @@ int aeron_network_publication_send_data(
 
     if (vlen > 0)
     {
-        if ((result = aeron_send_channel_sendmmsg(publication->endpoint, mmsghdr, (size_t)vlen)) != vlen)
+        result = aeron_send_channel_sendmmsg(publication->endpoint, mmsghdr, (size_t)vlen);
+        if (result == vlen)
         {
-            if (result >= 0)
-            {
-                aeron_counter_increment(publication->short_sends_counter, 1);
-            }
+            aeron_counter_set_ordered(publication->snd_pos_position.value_addr, highest_pos);
+        }
+        else
+        {
+            aeron_counter_increment(publication->short_sends_counter, 1);
         }
 
         publication->time_of_last_send_or_heartbeat_ns = now_ns;
         publication->track_sender_limits = true;
-        aeron_counter_set_ordered(publication->snd_pos_position.value_addr, highest_pos);
     }
     else if (publication->track_sender_limits && available_window <= 0)
     {
@@ -455,6 +457,11 @@ int aeron_network_publication_send(aeron_network_publication_t *publication, int
     }
 
     int bytes_sent = aeron_network_publication_send_data(publication, now_ns, snd_pos, term_offset);
+    if ( bytes_sent > 0)
+    {
+        int64_t new_snd_pos = snd_pos + bytes_sent;
+        // printf("aeron_network_publication_send %d %lld %lld %d\n", bytes_sent, snd_pos, new_snd_pos, publication->should_send_setup_frame);
+    }
     if (bytes_sent < 0)
     {
         return -1;
@@ -621,6 +628,8 @@ void aeron_network_publication_on_status_message(
         AERON_PUT_ORDERED(publication->has_receivers, true);
     }
 
+    int64_t snd_lmt_old = aeron_counter_get_volatile(publication->snd_lmt_position.value_addr);
+
     aeron_counter_set_ordered(
         publication->snd_lmt_position.value_addr,
         publication->flow_control->on_status_message(
@@ -628,10 +637,21 @@ void aeron_network_publication_on_status_message(
             buffer,
             length,
             addr,
-            *publication->snd_lmt_position.value_addr,
+            snd_lmt_old,
             publication->initial_term_id,
             publication->position_bits_to_shift,
             time_ns));
+    aeron_status_message_header_t *status_message_header = (aeron_status_message_header_t *)buffer;
+
+    if (snd_lmt_old != aeron_counter_get_volatile(publication->snd_lmt_position.value_addr))
+    {
+        printf("senderLimit onStatusMessage: %d:%d:%d:%lld\n",
+        status_message_header->consumption_term_id - publication->initial_term_id,
+        status_message_header->consumption_term_offset,
+        (int)publication->position_bits_to_shift,
+        aeron_counter_get_volatile(publication->snd_lmt_position.value_addr)
+        );
+    }
 
     aeron_network_publication_update_connected_status(
         publication,

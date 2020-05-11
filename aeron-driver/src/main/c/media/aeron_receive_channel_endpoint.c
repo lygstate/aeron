@@ -220,9 +220,15 @@ int aeron_receive_channel_endpoint_send_sm(
     struct iovec iov[1];
     struct msghdr msghdr;
 
+    if (endpoint == NULL)
+    {
+        return -1;
+    }
+
     const int32_t frame_length = endpoint->group_tag.is_present ?
         sizeof(aeron_status_message_header_t) + sizeof(aeron_status_message_optional_header_t) :
         sizeof(aeron_status_message_header_t);
+
 
     sm_header->frame_header.frame_length = frame_length;
     sm_header->frame_header.version = AERON_FRAME_HEADER_VERSION;

@@ -519,6 +519,7 @@ public class PublicationImage
             (minSubscriberPosition > (nextSmPosition + threshold)))
         {
             cleanBufferTo(minSubscriberPosition - (termLengthMask + 1));
+            System.out.println(String.format("minSubscriberPosition: %d", minSubscriberPosition));
             scheduleStatusMessage(nowNs, minSubscriberPosition, windowLength);
         }
     }

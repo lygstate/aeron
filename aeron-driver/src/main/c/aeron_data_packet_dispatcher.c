@@ -294,14 +294,16 @@ int aeron_data_packet_dispatcher_on_data(
 {
     aeron_data_packet_dispatcher_stream_interest_t *stream_interest =
         aeron_int64_to_ptr_hash_map_get(&dispatcher->session_by_stream_id_map, header->stream_id);
-
+    if (header->frame_header.type == AERON_HDR_TYPE_PAD) {
+        printf("Received AERON_HDR_TYPE_PAD\n");
+    }
     if (NULL != stream_interest)
     {
         aeron_publication_image_t *image = NULL;
         const bool found = aeron_int64_to_tagged_ptr_hash_map_get(
             &stream_interest->image_by_session_id_map, header->session_id, NULL, (void **)&image);
-
         if (NULL != image)
+
         {
             return aeron_publication_image_insert_packet(
                 image, destination, header->term_id, header->term_offset, buffer, length, addr);

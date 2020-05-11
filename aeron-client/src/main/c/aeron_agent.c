@@ -425,6 +425,8 @@ static void *agent_main(void *arg)
     while (aeron_agent_is_running(runner))
     {
         runner->idle_strategy(runner->idle_strategy_state, runner->do_work(runner->agent_state));
+        /* If file mapping are dead, decrease reference count */
+        /* On main thread, when reference count are zero, free it */
     }
 
     return NULL;

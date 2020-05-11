@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdio.h>
 #include "util/aeron_bitutil.h"
 #include "protocol/aeron_udp_protocol.h"
 #include "aeron_atomic.h"
@@ -29,7 +30,7 @@ inline size_t aeron_term_scanner_scan_for_availability(
 {
     const size_t limit = max_length < term_length_left ? max_length : term_length_left;
     size_t available = 0;
-    *padding = 0;
+    size_t tmp_padding = 0;
 
     do
     {
@@ -46,7 +47,11 @@ inline size_t aeron_term_scanner_scan_for_availability(
         int32_t aligned_frame_length = AERON_ALIGN(frame_length, AERON_LOGBUFFER_FRAME_ALIGNMENT);
         if (AERON_HDR_TYPE_PAD == frame_header->type)
         {
-            *padding = aligned_frame_length - AERON_DATA_HEADER_LENGTH;
+            if (available > 0)
+            {
+                break;
+            }
+            tmp_padding = aligned_frame_length - AERON_DATA_HEADER_LENGTH;
             aligned_frame_length = AERON_DATA_HEADER_LENGTH;
         }
 
@@ -55,11 +60,13 @@ inline size_t aeron_term_scanner_scan_for_availability(
         if (available > limit)
         {
             available -= aligned_frame_length;
-            *padding = 0;
+            tmp_padding = 0;
             break;
         }
     }
-    while (0 == *padding && available < limit);
+    while (0 == tmp_padding && available < limit);
+
+    *padding = tmp_padding;
 
     return available;
 }

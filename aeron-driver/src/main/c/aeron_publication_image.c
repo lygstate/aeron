@@ -315,9 +315,8 @@ void aeron_publication_image_on_gap_detected(void *clientd, int32_t term_id, int
 void aeron_publication_image_track_rebuild(
     aeron_publication_image_t *image, int64_t now_ns, int64_t status_message_timeout)
 {
-    int64_t hwm_position = aeron_counter_get_volatile(image->rcv_hwm_position.value_addr);
-    int64_t min_sub_pos = hwm_position;
-    int64_t max_sub_pos = 0;
+    int64_t min_sub_pos = INT64_MAX;
+    int64_t max_sub_pos = INT64_MIN;
 
     for (size_t i = 0, length = image->conductor_fields.subscribable.length; i < length; i++)
     {
@@ -332,9 +331,14 @@ void aeron_publication_image_track_rebuild(
         }
     }
 
+    if (min_sub_pos == INT64_MAX) {
+        return;
+    }
+
     const int64_t rebuild_position = *image->rcv_pos_position.value_addr > max_sub_pos ?
         *image->rcv_pos_position.value_addr : max_sub_pos;
 
+    int64_t hwm_position = aeron_counter_get_volatile(image->rcv_hwm_position.value_addr);
     bool loss_found = false;
     const size_t index = aeron_logbuffer_index_by_position(rebuild_position, image->position_bits_to_shift);
     const int32_t rebuild_offset = aeron_loss_detector_scan(
@@ -371,6 +375,7 @@ void aeron_publication_image_track_rebuild(
         (now_ns > (image->last_status_message_timestamp + status_message_timeout)) ||
         (min_sub_pos > (image->next_sm_position + threshold)))
     {
+        printf("New min_sub_pos %lld\n", min_sub_pos);
         aeron_publication_image_clean_buffer_to(image, min_sub_pos - image->term_length);
         aeron_publication_image_schedule_status_message(image, now_ns, min_sub_pos, window_length);
     }
@@ -555,6 +560,7 @@ int aeron_publication_image_send_pending_status_message(aeron_publication_image_
 
                     if (aeron_publication_image_connection_is_alive(connection, now_ns))
                     {
+                        printf("aeron_receive_channel_endpoint_send_sm %d:%d\n", term_id - image->initial_term_id, term_offset);
                         int send_sm_result = aeron_receive_channel_endpoint_send_sm(
                             image->endpoint,
                             connection->control_addr,

@@ -313,6 +313,7 @@ public class NetworkPublication
         if (0 == bytesSent)
         {
             bytesSent = heartbeatMessageCheck(nowNs, activeTermId, termOffset, signalEos && isEndOfStream);
+            boolean sendLimitLess = this.senderLimit.get() < this.senderPosition.get();
 
             if (spiesSimulateConnection && hasSpies && !hasReceivers)
             {
@@ -323,6 +324,10 @@ public class NetworkPublication
             else
             {
                 senderLimit.setOrdered(flowControl.onIdle(nowNs, senderLimit.get(), senderPosition, isEndOfStream));
+            }
+
+            if (sendLimitLess) {
+                System.out.println("sendLimitLess: " + String.valueOf(senderLimit.get()) + ":" + String.valueOf(shouldSendSetupFrame) + "\n");
             }
         }
 
@@ -454,6 +459,8 @@ public class NetworkPublication
         final long timeNs = nanoClock.nanoTime();
         statusMessageDeadlineNs = timeNs + connectionTimeoutNs;
 
+        long oldLimit = senderLimit.get();
+
         senderLimit.setOrdered(flowControl.onStatusMessage(
             msg,
             srcAddress,
@@ -461,6 +468,21 @@ public class NetworkPublication
             initialTermId,
             positionBitsToShift,
             timeNs));
+        if (oldLimit != senderLimit.get())
+        {
+            /*
+                    final long position = computePosition(
+            flyweight.consumptionTermId(),
+            flyweight.consumptionTermOffset(),
+            positionBitsToShift,
+            initialTermId);
+
+        return Math.max(senderLimit, position + flyweight.receiverWindowLength());
+            */
+            System.out.println("senderLimit onStatusMessage: " + String.valueOf(msg.consumptionTermId()) + ":"
+            + String.valueOf(msg.consumptionTermOffset()) + ":" + String.valueOf(positionBitsToShift) + ":" + String.valueOf(senderLimit.get()) + "\n");
+        }
+
 
         if (!isConnected && flowControl.hasRequiredReceivers())
         {
@@ -575,7 +597,12 @@ public class NetworkPublication
                     trackSenderLimits = true;
 
                     bytesSent = available;
-                    this.senderPosition.setOrdered(senderPosition + bytesSent + padding(scanOutcome));
+                    int paddingValue =  padding(scanOutcome);
+                    if (paddingValue > 0) {
+                        System.out.print("sendData padding:" + String.valueOf(paddingValue) + ":" + String.valueOf(senderPosition) + ":"
+                         + String.valueOf(available) + ":" + String.valueOf(senderLimit.get()) + "\n");
+                    }
+                    this.senderPosition.setOrdered(senderPosition + bytesSent + paddingValue);
                 }
                 else
                 {
@@ -638,6 +665,7 @@ public class NetworkPublication
                 .termOffset(termOffset)
                 .flags((byte)(signalEos ? BEGIN_END_AND_EOS_FLAGS : BEGIN_AND_END_FLAGS));
 
+            System.out.println(String.format("activeTermId %d %d \n", activeTermId, termOffset));
             bytesSent = channelEndpoint.send(heartbeatBuffer);
             if (DataHeaderFlyweight.HEADER_LENGTH != bytesSent)
             {
