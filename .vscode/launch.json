@@ -52,7 +52,7 @@
         "-Daeron.dir.delete.on.shutdown=true",
         "-Daeron.term.buffer.length=67108864",
       ],
-      "stopAtEntry": true,
+      "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [
         { "name": "AERON_TERM_BUFFER_SPARSE_FILE", "value": "0" },
