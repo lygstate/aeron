@@ -331,57 +331,63 @@ int aeron_udp_channel_transport_recvmmsg(
 int aeron_udp_channel_transport_sendmmsg(
     aeron_udp_channel_data_paths_t *data_paths,
     aeron_udp_channel_transport_t *transport,
-    struct mmsghdr *msgvec,
-    size_t vlen)
+    aeron_udp_channel_send_buffers_t *send_buffers)
 {
-#if defined(HAVE_SENDMMSG)
-    int sendmmsg_result = sendmmsg(transport->fd, msgvec, vlen, 0);
-    if (sendmmsg_result < 0)
+    int result = 0;
+    struct mmsghdr msgvec[AERON_DRIVER_UDP_NUM_SEND_BUFFERS];
+    for (int i = 0; i < send_buffers->count; i++)
     {
-        aeron_set_err_from_last_err_code("sendmmsg");
-        return -1;
+        msgvec[i].msg_hdr.msg_iov = send_buffers->iov + i;
+        msgvec[i].msg_hdr.msg_iovlen = 1;
+        msgvec[i].msg_hdr.msg_flags = 0;
+        msgvec[i].msg_hdr.msg_name = send_buffers->addrv[i];
+        msgvec[i].msg_hdr.msg_namelen = send_buffers->addr_lenv[i];
+        msgvec[i].msg_len = 0;
+        msgvec[i].msg_hdr.msg_control = NULL;
+        msgvec[i].msg_hdr.msg_controllen = 0;
     }
 
-    return sendmmsg_result;
+#if defined(HAVE_SENDMMSG)
+    result = sendmmsg(transport->fd, msgvec, send_buffers->count, 0);
+    if (result < 0)
+    {
+        aeron_set_err_from_last_err_code("sendmmsg");
+        result = -1;
+    }
 #else
-    int result = 0;
 
-    for (size_t i = 0, length = vlen; i < length; i++)
+    for (int i = 0; i < send_buffers->count; i++)
     {
         ssize_t sendmsg_result = sendmsg(transport->fd, &msgvec[i].msg_hdr, 0);
         if (sendmsg_result < 0)
         {
             aeron_set_err_from_last_err_code("sendmsg");
-            return -1;
+            result = -1;
+            break;
         }
 
         msgvec[i].msg_len = (unsigned int)sendmsg_result;
 
-        if (0 == sendmsg_result)
+        result++;
+
+        if (sendmsg_result < (ssize_t)send_buffers->iov[i].iov_len)
         {
             break;
         }
-
-        result++;
+    }
+#endif
+    send_buffers->bytes_sent = 0;
+    for (int i = 0; i < result; i += 1)
+    {
+        send_buffers->bytes_sent += msgvec[i].msg_len;
+        if (msgvec[i].msg_len < send_buffers->iov[i].iov_len)
+        {
+            result = i;
+            break;
+        }
     }
 
     return result;
-#endif
-}
-
-int aeron_udp_channel_transport_sendmsg(
-    aeron_udp_channel_data_paths_t *data_paths,
-    aeron_udp_channel_transport_t *transport,
-    struct msghdr *message)
-{
-    ssize_t sendmsg_result = sendmsg(transport->fd, message, 0);
-    if (sendmsg_result < 0)
-    {
-        aeron_set_err_from_last_err_code("sendmsg");
-        return -1;
-    }
-
-    return (int)sendmsg_result;
 }
 
 int aeron_udp_channel_transport_get_so_rcvbuf(aeron_udp_channel_transport_t *transport, size_t *so_rcvbuf)
