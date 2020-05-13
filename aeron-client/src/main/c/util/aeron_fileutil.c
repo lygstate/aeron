@@ -28,6 +28,7 @@
 #include "aeron_platform.h"
 #include "aeron_error.h"
 #include "aeron_fileutil.h"
+#include "aeron_clock.h"
 
 #if defined(AERON_COMPILER_MSVC) && defined(AERON_CPU_X64)
 #include <WinSock2.h>
@@ -407,7 +408,7 @@ int aeron_ipc_publication_location(
 {
     return snprintf(
         dst, length,
-        "%s/" AERON_PUBLICATIONS_DIR "/%" PRId64 ".logbuffer",
+        "%s-" AERON_PUBLICATIONS_DIR "-%" PRId64 ".logbuffer",
         aeron_dir, correlation_id);
 }
 
@@ -419,7 +420,7 @@ int aeron_network_publication_location(
 {
     return snprintf(
         dst, length,
-        "%s/" AERON_PUBLICATIONS_DIR "/%" PRId64 ".logbuffer",
+        "%s/" AERON_PUBLICATIONS_DIR "-%" PRId64 ".logbuffer",
         aeron_dir, correlation_id);
 }
 
@@ -431,7 +432,7 @@ int aeron_publication_image_location(
 {
     return snprintf(
         dst, length,
-        "%s/" AERON_IMAGES_DIR "/%" PRId64 ".logbuffer",
+        "%s/" AERON_IMAGES_DIR "-%" PRId64 ".logbuffer",
         aeron_dir, correlation_id);
 }
 
@@ -470,49 +471,29 @@ int aeron_map_raw_log(
     uint64_t term_length,
     uint64_t page_size)
 {
-    int fd, result = -1;
+    int result = -1;
     uint64_t log_length = aeron_logbuffer_compute_log_length(term_length, page_size);
-
-    if ((fd = open(path, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) >= 0)
+    mapped_raw_log->mapped_file.length = log_length;
+    mapped_raw_log->mapped_file.addr = NULL;
+    printf("aeron_nano_clock begin: %.3lf\n", aeron_nano_clock() / 1e9);
+    result = aeron_map_new_file(&(mapped_raw_log->mapped_file), path, !use_sparse_files);
+    printf("aeron_nano_clock end: %.3lf\n", aeron_nano_clock() / 1e9);
+    if (result >= 0)
     {
-        if (aeron_ftruncate(fd, (off_t)log_length) >= 0)
+        for (size_t i = 0; i < AERON_LOGBUFFER_PARTITION_COUNT; i++)
         {
-            mapped_raw_log->mapped_file.length = log_length;
-            mapped_raw_log->mapped_file.addr = NULL;
-
-            if (aeron_mmap(&mapped_raw_log->mapped_file, fd, 0) < 0)
-            {
-                aeron_set_err_from_last_err_code("%s:%d", __FILE__, __LINE__);
-                return -1;
-            }
-
-            if (!use_sparse_files)
-            {
-                aeron_touch_pages(mapped_raw_log->mapped_file.addr, log_length, page_size);
-            }
-
-            for (size_t i = 0; i < AERON_LOGBUFFER_PARTITION_COUNT; i++)
-            {
-                mapped_raw_log->term_buffers[i].addr = (uint8_t *)mapped_raw_log->mapped_file.addr + (i * term_length);
-                mapped_raw_log->term_buffers[i].length = term_length;
-            }
-
-            mapped_raw_log->log_meta_data.addr =
-                (uint8_t *)mapped_raw_log->mapped_file.addr + (log_length - AERON_LOGBUFFER_META_DATA_LENGTH);
-            mapped_raw_log->log_meta_data.length = AERON_LOGBUFFER_META_DATA_LENGTH;
-            mapped_raw_log->term_length = term_length;
-
-            result = 0;
+            mapped_raw_log->term_buffers[i].addr = (uint8_t *)mapped_raw_log->mapped_file.addr + (i * term_length);
+            mapped_raw_log->term_buffers[i].length = term_length;
         }
-        else
-        {
-            aeron_set_err_from_last_err_code("%s:%d", __FILE__, __LINE__);
-        }
+
+        mapped_raw_log->log_meta_data.addr =
+            (uint8_t *)mapped_raw_log->mapped_file.addr + (log_length - AERON_LOGBUFFER_META_DATA_LENGTH);
+        mapped_raw_log->log_meta_data.length = AERON_LOGBUFFER_META_DATA_LENGTH;
+        mapped_raw_log->term_length = term_length;
+
+        result = 0;
     }
-    else
-    {
-        aeron_set_err_from_last_err_code("%s:%d", __FILE__, __LINE__);
-    }
+    printf("aeron_nano_clock inited: %.3lf\n", aeron_nano_clock() / 1e9);
 
     return result;
 }

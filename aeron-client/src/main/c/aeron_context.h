@@ -28,7 +28,7 @@
 
 typedef struct aeron_context_stct
 {
-    char *aeron_dir;
+    char aeron_dir[AERON_MAX_PATH];
 
     size_t file_page_size;                                  /* aeron.file.page.size = 4KB */
 

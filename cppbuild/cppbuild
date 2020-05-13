@@ -86,12 +86,6 @@ done
 
 echo "Will make with \"-j $ncpus\"."
 
-if [[ -d "$BUILD_DIR" ]] ; then
-  echo "Build directory ($BUILD_DIR) exists, removing."
-  rm -rf ${BUILD_DIR}
-fi
-
-mkdir -p ${BUILD_DIR}
 
 if [[ "$COVERAGE_BUILD" -eq 1 ]] ; then
   cd ${BUILD_DIR}

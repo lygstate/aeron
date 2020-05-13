@@ -270,6 +270,7 @@ void aeron_driver_receiver_on_add_subscription(void *clientd, void *item)
     aeron_command_subscription_t *cmd = (aeron_command_subscription_t *)item;
     aeron_receive_channel_endpoint_t *endpoint = (aeron_receive_channel_endpoint_t *)cmd->endpoint;
 
+    printf("aeron_driver_receiver_on_add_subscription %.3lf %d\n", aeron_nano_clock() / 1e9, cmd->stream_id);
     if (aeron_receive_channel_endpoint_on_add_subscription(endpoint, cmd->stream_id) < 0)
     {
         AERON_DRIVER_RECEIVER_ERROR(receiver, "receiver on_add_subscription: %s", aeron_errmsg());
@@ -395,10 +396,12 @@ void aeron_driver_receiver_on_add_publication_image(void *clientd, void *item)
 {
     aeron_driver_receiver_t *receiver = (aeron_driver_receiver_t *)clientd;
     aeron_command_publication_image_t *cmd = (aeron_command_publication_image_t *)item;
+    aeron_publication_image_t *image = (aeron_publication_image_t *)cmd->image;
     aeron_receive_channel_endpoint_t *endpoint = (aeron_receive_channel_endpoint_t *)cmd->endpoint;
 
     int ensure_capacity_result = 0;
     AERON_ARRAY_ENSURE_CAPACITY(ensure_capacity_result, receiver->images, aeron_driver_receiver_image_entry_t);
+    printf("aeron_driver_receiver_on_add_publication_image %.3lf %d\n", aeron_nano_clock() / 1e9, image->stream_id);
 
     if (aeron_receive_channel_endpoint_on_add_publication_image(endpoint, cmd->image) < 0 || ensure_capacity_result < 0)
     {

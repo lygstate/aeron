@@ -238,20 +238,6 @@ int aeron_driver_ensure_dir_is_recreated(aeron_driver_context_t *context)
         return -1;
     }
 
-    snprintf(buffer, sizeof(buffer) - 1, "%s/%s", dirname, AERON_PUBLICATIONS_DIR);
-    if (aeron_mkdir(buffer, S_IRWXU | S_IRWXG | S_IRWXO) != 0)
-    {
-        aeron_set_err_from_last_err_code("mkdir %s", buffer);
-        return -1;
-    }
-
-    snprintf(buffer, sizeof(buffer) - 1, "%s/%s", dirname, AERON_IMAGES_DIR);
-    if (aeron_mkdir(buffer, S_IRWXU | S_IRWXG | S_IRWXO) != 0)
-    {
-        aeron_set_err_from_last_err_code("mkdir %s", buffer);
-        return -1;
-    }
-
     return 0;
 }
 

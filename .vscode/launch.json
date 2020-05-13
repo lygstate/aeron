@@ -55,6 +55,7 @@
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [
+        { "name": "AERON_EVENT_LOG", "value": "0x3"},
         { "name": "AERON_TERM_BUFFER_SPARSE_FILE", "value": "0" },
         { "name": "AERON_MTU_LENGTH", "value": "60000" },
         { "name": "AERON_RCV_INITIAL_WINDOW_LENGTH", "value": "2m" },

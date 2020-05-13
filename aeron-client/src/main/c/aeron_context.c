@@ -141,10 +141,6 @@ int aeron_context_init(aeron_context_t **context)
         return -1;
     }
 
-    if (aeron_alloc((void **)&_context->aeron_dir, AERON_MAX_PATH) < 0)
-    {
-        return -1;
-    }
 
     if (aeron_mpsc_concurrent_array_queue_init(&_context->command_queue, AERON_CLIENT_COMMAND_QUEUE_CAPACITY) < 0)
     {
@@ -255,7 +251,6 @@ int aeron_context_close(aeron_context_t *context)
 
         aeron_mpsc_concurrent_array_queue_close(&context->command_queue);
 
-        aeron_free((void *)context->aeron_dir);
         aeron_free(context->idle_strategy_state);
         aeron_free(context);
     }

@@ -418,7 +418,6 @@ int aeron_driver_context_init(aeron_driver_context_t **context)
 
     _context->cnc_map.addr = NULL;
     _context->loss_report.addr = NULL;
-    _context->aeron_dir = NULL;
     _context->conductor_proxy = NULL;
     _context->sender_proxy = NULL;
     _context->receiver_proxy = NULL;
@@ -426,11 +425,6 @@ int aeron_driver_context_init(aeron_driver_context_t **context)
     _context->error_log = NULL;
     _context->udp_channel_outgoing_interceptor_bindings = NULL;
     _context->udp_channel_incoming_interceptor_bindings = NULL;
-
-    if (aeron_alloc((void **)&_context->aeron_dir, AERON_MAX_PATH) < 0)
-    {
-        return -1;
-    }
 
     if (aeron_spsc_concurrent_array_queue_init(&_context->sender_command_queue, AERON_COMMAND_QUEUE_CAPACITY) < 0)
     {
@@ -1095,7 +1089,6 @@ int aeron_driver_context_close(aeron_driver_context_t *context)
     aeron_unmap(&context->cnc_map);
     aeron_unmap(&context->loss_report);
 
-    aeron_free((void *)context->aeron_dir);
     aeron_free(context->conductor_idle_strategy_state);
     aeron_free(context->receiver_idle_strategy_state);
     aeron_free(context->sender_idle_strategy_state);
