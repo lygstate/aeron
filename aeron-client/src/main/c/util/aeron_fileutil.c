@@ -90,8 +90,14 @@ int aeron_unmap(aeron_mapped_file_t *mapped_file)
 
 int aeron_ftruncate(int fd, off_t length)
 {
-    int error = _chsize_s(fd, length);
-    if (error != 0)
+    HANDLE fh = (HANDLE)_get_osfhandle(fd);
+
+    if (SetFilePointer(fh, length, 0, FILE_BEGIN) == 0)
+    {
+        return -1;
+    }
+
+    if (SetEndOfFile(fh) == 0)
     {
         return -1;
     }
