@@ -85,7 +85,6 @@ typedef struct aeron_publication_image_stct
     aeron_loss_reporter_t *loss_reporter;
     aeron_loss_reporter_entry_offset_t loss_reporter_offset;
 
-    char log_file_name[AERON_MAX_PATH];
     int32_t session_id;
     int32_t stream_id;
     int32_t initial_term_id;
@@ -94,7 +93,8 @@ typedef struct aeron_publication_image_stct
     int32_t term_length;
     int32_t mtu_length;
     int32_t term_length_mask;
-    size_t log_file_name_length;
+    aeron_image_os_ipc_t os_ipc;
+
     size_t position_bits_to_shift;
     aeron_map_raw_log_close_func_t map_raw_log_close_func;
 

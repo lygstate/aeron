@@ -168,8 +168,7 @@ void aeron_client_conductor_on_driver_response(int32_t type_id, uint8_t *buffer,
         {
             aeron_publication_buffers_ready_t *response = (aeron_publication_buffers_ready_t *)buffer;
 
-            if (length < sizeof(aeron_publication_buffers_ready_t) ||
-                length < (sizeof(aeron_publication_buffers_ready_t) + response->log_file_length))
+            if (length < sizeof(aeron_publication_buffers_ready_t))
             {
                 goto malformed_command;
             }
@@ -1157,7 +1156,7 @@ int aeron_client_conductor_on_error(aeron_client_conductor_t *conductor, aeron_e
 int aeron_client_conductor_get_or_create_log_buffer(
     aeron_client_conductor_t *conductor,
     aeron_log_buffer_t **log_buffer,
-    const char *log_file,
+    aeron_image_os_ipc_t *os_ipc,
     int64_t original_registration_id,
     bool pre_touch)
 {
@@ -1209,20 +1208,13 @@ int aeron_client_conductor_on_publication_ready(
 
         if (response->correlation_id == resource->registration_id)
         {
-            char log_file[AERON_MAX_PATH];
             const char *channel = resource->uri;
             bool is_exclusive = (AERON_CLIENT_TYPE_EXCLUSIVE_PUBLICATION == resource->type) ? true : false;
 
-            memcpy(
-                log_file,
-                (const char *)response + sizeof(aeron_publication_buffers_ready_t),
-                response->log_file_length);
-            log_file[response->log_file_length] = '\0';
-
-            aeron_log_buffer_t *log_buffer;
+            aeron_log_buffer_t *log_buffer = NULL;
 
             if (aeron_client_conductor_get_or_create_log_buffer(
-                conductor, &log_buffer, log_file, response->registration_id, conductor->pre_touch) < 0)
+                conductor, &log_buffer, &response->os_ipc, response->registration_id, conductor->pre_touch) < 0)
             {
                 return -1;
             }
