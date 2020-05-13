@@ -24,10 +24,20 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "aeron_platform.h"
 #include "aeron_error.h"
 #include "aeron_fileutil.h"
+
+static void aeron_to_hex(char *str, const uint8_t *buf, int len)
+{
+    int i;
+    for (i = 0; i < len; i += 1)
+    {
+        sprintf(str + 2 * i, "%02X", buf[i]);
+    }
+}
 
 #if defined(AERON_COMPILER_MSVC) && defined(AERON_CPU_X64)
 #include <WinSock2.h>
@@ -50,7 +60,7 @@
 #define S_IROTH 0
 #define S_IWOTH 0
 
-static int aeron_mmap(aeron_mapped_file_t *mapping, int fd, off_t offset)
+static int aeron_mmap(aeron_mapped_file_t *mapping, int fd, uint64_t offset)
 {
     HANDLE hmap = CreateFileMapping((HANDLE)_get_osfhandle(fd), 0, PAGE_READWRITE, 0, 0, 0);
 
@@ -61,11 +71,11 @@ static int aeron_mmap(aeron_mapped_file_t *mapping, int fd, off_t offset)
         return -1;
     }
 
-    mapping->addr = MapViewOfFileEx(hmap, FILE_MAP_WRITE, 0, offset, mapping->length, NULL);
+    mapping->addr = MapViewOfFileEx(hmap, FILE_MAP_WRITE, 0, (DWORD)offset, mapping->length, NULL);
 
     if (!CloseHandle(hmap))
     {
-        fprintf(stderr, "unable to close file mapping handle\n");
+        fprintf(stderr, "unable to close file mapping handle when aeron_mmap\n");
     }
 
     if (!mapping->addr)
@@ -78,11 +88,68 @@ static int aeron_mmap(aeron_mapped_file_t *mapping, int fd, off_t offset)
     return MAP_FAILED == mapping->addr ? -1 : 0;
 }
 
+static void aeron_get_file_mapping_name(char *file_mapping_name, aeron_image_os_ipc_command_t *os_ipc_command)
+{
+    char id_str[33];
+    aeron_to_hex(id_str, (uint8_t*)&(os_ipc_command->correlation_id), 16);
+    sprintf(file_mapping_name, "Local\\aeron-%s",id_str);
+}
+
+static int aeron_mmap_anonymous(aeron_mapped_file_t *mapping, aeron_image_os_ipc_mapped_t *os_ipc, uint64_t offset, bool creating_new)
+{
+    char file_mapping_name[128];
+    aeron_get_file_mapping_name(file_mapping_name, &os_ipc->command);
+    uint64_t length = os_ipc->command.buffer_length;
+    HANDLE hmap = 0;
+    if (creating_new)
+    {
+        hmap = CreateFileMappingA(INVALID_HANDLE_VALUE, 0, PAGE_READWRITE, (DWORD)(length >> 32), (DWORD)(length & UINT32_MAX), file_mapping_name);
+    }
+    else
+    {
+        hmap = OpenFileMappingA(SECTION_MAP_WRITE | SECTION_MAP_READ, FALSE, file_mapping_name);
+    }
+
+    if (!hmap)
+    {
+        DWORD err = GetLastError();
+        aeron_set_err_from_last_err_code("aeron_mmap_anonymous %d", err);
+        return -1;
+    }
+
+    mapping->addr = MapViewOfFileEx(hmap, SECTION_MAP_WRITE | SECTION_MAP_READ, 0, (DWORD)offset, (SIZE_T)length, NULL);
+
+    if (!mapping->addr)
+    {
+        mapping->addr = MAP_FAILED;
+    }
+    else
+    {
+        mapping->length = (size_t)length;
+    }
+
+    if (!creating_new || MAP_FAILED == mapping->addr)
+    {
+        if (!CloseHandle(hmap))
+        {
+            fprintf(stderr, "unable to close file mapping handle when aeron_mmap_anonymous\n");
+        }
+    }
+    else
+    {
+        os_ipc->handle = hmap;
+    }
+
+    return MAP_FAILED == mapping->addr ? -1 : 0;
+}
+
 int aeron_unmap(aeron_mapped_file_t *mapped_file)
 {
     if (NULL != mapped_file->addr)
     {
-        return UnmapViewOfFile(mapped_file->addr) ? 0 : -1;
+        int result = UnmapViewOfFile(mapped_file->addr) ? 0 : -1;
+        mapped_file->addr = NULL;
+        return result;
     }
 
     return 0;
@@ -394,120 +461,111 @@ int aeron_map_existing_file(aeron_mapped_file_t *mapped_file, const char *path)
     return result;
 }
 
+int aeron_map_new_os_ipc(aeron_mapped_file_t *mapped_file, aeron_image_os_ipc_mapped_t *os_ipc, uint64_t length, bool fill_with_zeroes)
+{
+    int result = -1;
+    os_ipc->command.buffer_length = length;
+    mapped_file->addr = NULL;
+    mapped_file->length = 0;
+
+    if (aeron_mmap_anonymous(mapped_file, os_ipc, 0, true) == 0)
+    {
+        if (fill_with_zeroes)
+        {
+            aeron_touch_pages(mapped_file->addr, mapped_file->length, AERON_BLOCK_SIZE);
+        }
+
+        result = 0;
+    }
+    else
+    {
+        aeron_set_err_from_last_err_code("%s:%d", __FILE__, __LINE__);
+    }
+    return result;
+}
+
+int aeron_map_existing_os_ipc(aeron_mapped_file_t *mapped_file, aeron_image_os_ipc_command_t *os_ipc_command)
+{
+    aeron_image_os_ipc_mapped_t os_ipc;
+    int result = -1;
+    mapped_file->addr = NULL;
+    mapped_file->length = 0;
+    os_ipc.command = *os_ipc_command;
+
+    if (aeron_mmap_anonymous(mapped_file, &os_ipc, 0, false) == 0)
+    {
+        result = 0;
+    }
+    else
+    {
+        aeron_set_err_from_last_err_code("%s:%d", __FILE__, __LINE__);
+    }
+    return result;
+}
+
+int aeron_close_os_ipc(aeron_image_os_ipc_mapped_t *os_ipc)
+{
+#ifdef _WIN32
+    HANDLE *handle = (HANDLE)os_ipc->handle;
+    os_ipc->handle = 0;
+    if (handle != 0 && handle != INVALID_HANDLE_VALUE)
+    {
+        os_ipc->handle = 0;
+        if (!CloseHandle(handle))
+        {
+            return -1;
+        }
+    }
+#else
+#error TODO:
+#endif
+    return 0;
+}
+
 uint64_t aeron_usable_fs_space_disabled(const char *path)
 {
     return UINT64_MAX;
 }
 
-int aeron_ipc_publication_location(
-    char *dst,
-    size_t length,
-    const char *aeron_dir,
+void aeron_os_ipc_location(
+    aeron_image_os_ipc_mapped_t *os_ipc,
     int64_t correlation_id)
 {
-    return snprintf(
-        dst, length,
-        "%s/" AERON_PUBLICATIONS_DIR "/%" PRId64 ".logbuffer",
-        aeron_dir, correlation_id);
-}
-
-int aeron_network_publication_location(
-    char *dst,
-    size_t length,
-    const char *aeron_dir,
-    int64_t correlation_id)
-{
-    return snprintf(
-        dst, length,
-        "%s/" AERON_PUBLICATIONS_DIR "/%" PRId64 ".logbuffer",
-        aeron_dir, correlation_id);
-}
-
-int aeron_publication_image_location(
-    char *dst,
-    size_t length,
-    const char *aeron_dir,
-    int64_t correlation_id)
-{
-    return snprintf(
-        dst, length,
-        "%s/" AERON_IMAGES_DIR "/%" PRId64 ".logbuffer",
-        aeron_dir, correlation_id);
-}
-
-size_t aeron_temp_filename(char *filename, size_t length)
-{
-#if !defined(_MSC_VER)
-    char rawname[] = "/tmp/aeron-c.XXXXXXX";
-    int fd = mkstemp(rawname);
-    close(fd);
-    unlink(rawname);
-
-    strncpy(filename, rawname, length);
-
-    return strlen(filename);
+    os_ipc->command.buffer_length = 0;
+#ifdef _WIN32
+    os_ipc->command.process_id = GetCurrentProcessId();
+    os_ipc->handle = 0;
 #else
-    char tmpdir[MAX_PATH+1];
-    char tmpfile[MAX_PATH];
-
-    if (GetTempPath(MAX_PATH, &tmpdir[0]) > 0)
-    {
-        if (GetTempFileName(tmpdir, TEXT("aeron-c"), 101, &tmpfile[0]) != 0)
-        {
-            strncpy(filename, tmpfile, length);
-            return strlen(filename);
-        }
-    }
-
-    return 0;
+#error need implement
+    os_ipc->handle = 0;
 #endif
+    os_ipc->command.correlation_id = correlation_id;
+    os_ipc->command.padding = 0;
 }
 
 int aeron_map_raw_log(
     aeron_mapped_raw_log_t *mapped_raw_log,
-    const char *path,
+    aeron_image_os_ipc_mapped_t *os_ipc,
     bool use_sparse_files,
     uint64_t term_length,
     uint64_t page_size)
 {
-    int fd, result = -1;
+    int result = -1;
     uint64_t log_length = aeron_logbuffer_compute_log_length(term_length, page_size);
-
-    if ((fd = open(path, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) >= 0)
+    if (aeron_map_new_os_ipc(&mapped_raw_log->mapped_file, os_ipc, log_length, !use_sparse_files) >= 0)
     {
-        if (aeron_ftruncate(fd, (off_t)log_length) >= 0)
+        for (size_t i = 0; i < AERON_LOGBUFFER_PARTITION_COUNT; i++)
         {
-            mapped_raw_log->mapped_file.length = log_length;
-            mapped_raw_log->mapped_file.addr = NULL;
-
-            if (aeron_mmap(&mapped_raw_log->mapped_file, fd, 0) < 0)
-            {
-                aeron_set_err_from_last_err_code("%s:%d", __FILE__, __LINE__);
-                return -1;
-            }
-
-            if (!use_sparse_files)
-            {
-                aeron_touch_pages(mapped_raw_log->mapped_file.addr, log_length, page_size);
-            }
-
-            for (size_t i = 0; i < AERON_LOGBUFFER_PARTITION_COUNT; i++)
-            {
-                mapped_raw_log->term_buffers[i].addr = (uint8_t *)mapped_raw_log->mapped_file.addr + (i * term_length);
-                mapped_raw_log->term_buffers[i].length = term_length;
-            }
-
-            mapped_raw_log->log_meta_data.addr =
-                (uint8_t *)mapped_raw_log->mapped_file.addr + (log_length - AERON_LOGBUFFER_META_DATA_LENGTH);
-            mapped_raw_log->log_meta_data.length = AERON_LOGBUFFER_META_DATA_LENGTH;
-            mapped_raw_log->term_length = term_length;
-
-            result = 0;
+            mapped_raw_log->term_buffers[i].addr = (uint8_t *)mapped_raw_log->mapped_file.addr + (i * term_length);
+            mapped_raw_log->term_buffers[i].length = term_length;
         }
-        else
-        {
-            aeron_set_err_from_last_err_code("%s:%d", __FILE__, __LINE__);
-        }
+
+        mapped_raw_log->log_meta_data.addr =
+            (uint8_t *)mapped_raw_log->mapped_file.addr + (log_length - AERON_LOGBUFFER_META_DATA_LENGTH);
+        mapped_raw_log->log_meta_data.length = AERON_LOGBUFFER_META_DATA_LENGTH;
+        mapped_raw_log->term_length = term_length;
+
+        result = 0;
     }
     else
     {
@@ -519,28 +577,13 @@ int aeron_map_raw_log(
 
 int aeron_map_existing_log(
     aeron_mapped_raw_log_t *mapped_raw_log,
-    const char *path,
+    aeron_image_os_ipc_command_t *os_ipc_command,
     bool pre_touch)
 {
-    struct stat sb;
-    int fd, result = -1;
+    int result = -1;
 
-    if ((fd = open(path, O_RDWR)) >= 0)
+    if (aeron_map_existing_os_ipc(&mapped_raw_log->mapped_file, os_ipc_command) >= 0)
     {
-        if (fstat(fd, &sb) == 0)
-        {
-            mapped_raw_log->mapped_file.length = (size_t)sb.st_size;
-
-            if (aeron_mmap(&mapped_raw_log->mapped_file, fd, 0) < 0)
-            {
-                aeron_set_err_from_last_err_code("%s:%d", __FILE__, __LINE__);
-            }
-        }
-        else
-        {
-            aeron_set_err_from_last_err_code("%s:%d", __FILE__, __LINE__);
-        }
-
         mapped_raw_log->log_meta_data.addr =
             (uint8_t *)mapped_raw_log->mapped_file.addr +
             (mapped_raw_log->mapped_file.length - AERON_LOGBUFFER_META_DATA_LENGTH);
@@ -590,7 +633,7 @@ int aeron_map_existing_log(
     return result;
 }
 
-int aeron_map_raw_log_close(aeron_mapped_raw_log_t *mapped_raw_log, const char *filename)
+int aeron_map_raw_log_close(aeron_mapped_raw_log_t *mapped_raw_log, aeron_image_os_ipc_mapped_t *os_ipc)
 {
     int result = 0;
 
@@ -598,13 +641,13 @@ int aeron_map_raw_log_close(aeron_mapped_raw_log_t *mapped_raw_log, const char *
     {
         if ((result = aeron_unmap(&mapped_raw_log->mapped_file)) < 0)
         {
-            return -1;
+            result = -1;
         }
 
-        if (NULL != filename && remove(filename) < 0)
+        if (NULL != os_ipc && aeron_close_os_ipc(os_ipc) < 0)
         {
             aeron_set_err_from_last_err_code("%s:%d", __FILE__, __LINE__);
-            return -1;
+            result = -1;
         }
 
         mapped_raw_log->mapped_file.addr = NULL;

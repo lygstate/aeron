@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <memory>
 #include "util/Export.h"
+#include <command/Flyweight.h>
 
 #ifdef _WIN32
     #ifndef NOMINMAX
@@ -33,20 +34,19 @@
 namespace aeron { namespace util
 {
 
+using namespace aeron::command;
 class CLIENT_EXPORT MemoryMappedFile
 {
 public:
     typedef std::shared_ptr<MemoryMappedFile> ptr_t;
 
-#ifdef _WIN32
-    static ptr_t createNew(const char* filename, size_t offset, size_t length);
-    static ptr_t mapExisting(const char* filename, size_t offset, size_t length, bool readOnly = false);
-#else
-    static ptr_t createNew(const char* filename, off_t offset, size_t length);
-    static ptr_t mapExisting(const char* filename, off_t offset, size_t length, bool readOnly = false);
-#endif
+    static ptr_t createNew(const BuffersReadyOsIpcDefn &osIpc, uint64_t offset, size_t length);
 
+    static ptr_t mapExisting(const char* filename, uint64_t offset, size_t length, bool readOnly = false);
     static ptr_t mapExisting(const char* filename, bool readOnly = false);
+    static ptr_t mapExisting(const BuffersReadyOsIpcDefn &osIpc);
+
+    static void close(const BuffersReadyOsIpcDefn &osIpc);
 
     inline static ptr_t mapExistingReadOnly(const char* filename)
     {
@@ -74,11 +74,7 @@ private:
 #endif
     };
 
-#ifdef _WIN32
-    MemoryMappedFile(FileHandle fd, size_t offset, size_t length, bool readOnly);
-#else
-    MemoryMappedFile(FileHandle fd, off_t offset, size_t length, bool readOnly);
-#endif
+    MemoryMappedFile(FileHandle fd, uint64_t offset, size_t length, bool readOnly);
 
     uint8_t* doMapping(size_t size, FileHandle fd, size_t offset, bool readOnly);
 

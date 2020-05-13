@@ -166,31 +166,29 @@ void aeron_driver_agent_conductor_to_client_interceptor(
 
 int aeron_driver_agent_map_raw_log_interceptor(
     aeron_mapped_raw_log_t *mapped_raw_log,
-    const char *path,
+    aeron_image_os_ipc_mapped_t *os_ipc,
     bool use_sparse_files,
     uint64_t term_length,
     uint64_t page_size)
 {
-    int result = aeron_map_raw_log(mapped_raw_log, path, use_sparse_files, term_length, page_size);
+    int result = aeron_map_raw_log(mapped_raw_log, os_ipc, use_sparse_files, term_length, page_size);
 
-    uint8_t buffer[AERON_MAX_PATH + sizeof(aeron_driver_agent_map_raw_log_op_header_t)];
+    uint8_t buffer[sizeof(aeron_driver_agent_map_raw_log_op_header_t)];
     aeron_driver_agent_map_raw_log_op_header_t *hdr = (aeron_driver_agent_map_raw_log_op_header_t *)buffer;
-    size_t path_len = strlen(path);
 
     hdr->time_ms = aeron_agent_epoch_clock();
-    hdr->map_raw.map_raw_log.path_len = (int32_t)path_len;
+    hdr->map_raw.map_raw_log.os_ipc = *os_ipc;
     hdr->map_raw.map_raw_log.result = result;
     hdr->map_raw.map_raw_log.addr = (uintptr_t)mapped_raw_log;
     memcpy(&hdr->map_raw.map_raw_log.log, mapped_raw_log, sizeof(hdr->map_raw.map_raw_log.log));
-    memcpy(buffer + sizeof(aeron_driver_agent_map_raw_log_op_header_t), path, path_len);
 
     aeron_mpsc_rb_write(
-        &logging_mpsc_rb, AERON_MAP_RAW_LOG_OP, buffer, sizeof(aeron_driver_agent_map_raw_log_op_header_t) + path_len);
+        &logging_mpsc_rb, AERON_MAP_RAW_LOG_OP, buffer, sizeof(aeron_driver_agent_map_raw_log_op_header_t));
 
     return result;
 }
 
-int aeron_driver_agent_map_raw_log_close_interceptor(aeron_mapped_raw_log_t *mapped_raw_log, const char *filename)
+int aeron_driver_agent_map_raw_log_close_interceptor(aeron_mapped_raw_log_t *mapped_raw_log, aeron_image_os_ipc_mapped_t *os_ipc)
 {
     uint8_t buffer[AERON_MAX_PATH + sizeof(aeron_driver_agent_map_raw_log_op_header_t)];
     aeron_driver_agent_map_raw_log_op_header_t *hdr = (aeron_driver_agent_map_raw_log_op_header_t *)buffer;
@@ -198,7 +196,7 @@ int aeron_driver_agent_map_raw_log_close_interceptor(aeron_mapped_raw_log_t *map
     hdr->time_ms = aeron_agent_epoch_clock();
     hdr->map_raw.map_raw_log_close.addr = (uintptr_t)mapped_raw_log;
     memcpy(&hdr->map_raw.map_raw_log_close.log, mapped_raw_log, sizeof(hdr->map_raw.map_raw_log.log));
-    hdr->map_raw.map_raw_log_close.result = aeron_map_raw_log_close(mapped_raw_log, filename);
+    hdr->map_raw.map_raw_log_close.result = aeron_map_raw_log_close(mapped_raw_log, os_ipc);
 
     aeron_mpsc_rb_write(
         &logging_mpsc_rb, AERON_MAP_RAW_LOG_OP_CLOSE, buffer, sizeof(aeron_driver_agent_map_raw_log_op_header_t));
@@ -602,8 +600,7 @@ static const char *dissect_cmd_out(int64_t cmd_id, const void *message, size_t l
         {
             aeron_publication_buffers_ready_t *command = (aeron_publication_buffers_ready_t *)message;
 
-            const char *log_file_name = (const char *)message + sizeof(aeron_publication_buffers_ready_t);
-            snprintf(buffer, sizeof(buffer) - 1, "%s %d:%d %d %d [%" PRId64 " %" PRId64 "]\n    \"%*s\"",
+            snprintf(buffer, sizeof(buffer) - 1, "%s %d:%d %d %d [%" PRId64 " %" PRId64 "] buffer length:%" PRId64 "\n",
                 cmd_id == AERON_RESPONSE_ON_PUBLICATION_READY ? "ON_PUBLICATION_READY" : "ON_EXCLUSIVE_PUBLICATION_READY",
                 command->session_id,
                 command->stream_id,
@@ -611,8 +608,7 @@ static const char *dissect_cmd_out(int64_t cmd_id, const void *message, size_t l
                 command->channel_status_indicator_id,
                 command->correlation_id,
                 command->registration_id,
-                command->log_file_length,
-                log_file_name);
+                command->os_ipc.buffer_length);
             break;
         }
 
@@ -980,15 +976,13 @@ void aeron_driver_agent_log_dissector(int32_t msg_type_id, const void *message, 
         case AERON_MAP_RAW_LOG_OP:
         {
             aeron_driver_agent_map_raw_log_op_header_t *hdr = (aeron_driver_agent_map_raw_log_op_header_t *)message;
-            const char *pathname = (const char *)message + sizeof(aeron_driver_agent_map_raw_log_op_header_t);
 
             fprintf(
                 logfp,
-                "[%s] MAP_RAW_LOG %p, \"%*s\" = %d\n",
+                "[%s] MAP_RAW_LOG %p, correlation_id:" "%"PRId64 " = %d\n",
                 dissect_timestamp(hdr->time_ms),
                 (void *)hdr->map_raw.map_raw_log.addr,
-                hdr->map_raw.map_raw_log.path_len,
-                pathname,
+                hdr->map_raw.map_raw_log.os_ipc.command.correlation_id,
                 hdr->map_raw.map_raw_log.result);
             break;
         }

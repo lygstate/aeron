@@ -48,10 +48,13 @@ namespace aeron { namespace command
 * +---------------------------------------------------------------+
 * |                    Subscriber Position Id                     |
 * +---------------------------------------------------------------+
-* |                      Log File Length                          |
+* |                      Ipc Buffer Length                        |
+* |                                                               |
 * +---------------------------------------------------------------+
-* |                       Log File Name                          ...
-*...                                                              |
+* |                     Os Ipc Info (16 Byte)                     |
+* |                                                               |
+* |                                                               |
+* |                                                               |
 * +---------------------------------------------------------------+
 * |                    Source identity Length                     |
 * +---------------------------------------------------------------+
@@ -69,6 +72,7 @@ struct ImageBuffersReadyDefn
     std::int32_t streamId;
     std::int64_t subscriptionRegistrationId;
     std::int32_t subscriberPositionId;
+    BuffersReadyOsIpcDefn osIpc;
 };
 #pragma pack(pop)
 
@@ -137,14 +141,14 @@ public:
         return *this;
     }
 
-    inline std::string logFileName() const
+    inline const BuffersReadyOsIpcDefn& osIpc() const
     {
-        return stringGet(logFileNameOffset());
+        return m_struct.osIpc;
     }
 
-    inline this_t &logFileName(const std::string &value)
+    inline this_t &osIpc(const BuffersReadyOsIpcDefn &value)
     {
-        stringPut(logFileNameOffset(), value);
+        m_struct.osIpc = value;
         return *this;
     }
 
@@ -163,25 +167,16 @@ public:
     {
         const util::index_t startOfSourceIdentity = sourceIdentityOffset();
 
-        return startOfSourceIdentity +
+        return static_cast<int32_t>(util::BitUtil::align(startOfSourceIdentity +
             stringGetLength(startOfSourceIdentity) +
-            static_cast<util::index_t>(sizeof(std::int32_t));
+            static_cast<util::index_t>(sizeof(std::int32_t)), 4));
     }
 
 private:
 
-    inline util::index_t logFileNameOffset() const
-    {
-        return sizeof(ImageBuffersReadyDefn);
-    }
-
     inline util::index_t sourceIdentityOffset() const
     {
-        const util::index_t offset = logFileNameOffset();
-        const auto alignment = static_cast<util::index_t>(sizeof(std::int32_t));
-        const util::index_t logFileNameLength = aeron::util::BitUtil::align(stringGetLength(offset), alignment);
-
-        return offset + sizeof(std::int32_t) + logFileNameLength;
+        return sizeof(ImageBuffersReadyDefn);
     }
 };
 

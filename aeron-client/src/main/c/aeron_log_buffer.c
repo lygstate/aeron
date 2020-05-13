@@ -16,12 +16,13 @@
 
 #include <errno.h>
 
+#include <inttypes.h>
 #include "aeron_log_buffer.h"
 #include "aeron_alloc.h"
 #include "util/aeron_error.h"
 
 int aeron_log_buffer_create(
-    aeron_log_buffer_t **log_buffer, const char *log_file, int64_t correlation_id, bool pre_touch)
+    aeron_log_buffer_t **log_buffer, aeron_image_os_ipc_command_t *os_ipc_command, int64_t correlation_id, bool pre_touch)
 {
     aeron_log_buffer_t *_log_buffer = NULL;
 
@@ -34,9 +35,9 @@ int aeron_log_buffer_create(
         return -1;
     }
 
-    if (aeron_map_existing_log(&_log_buffer->mapped_raw_log, log_file, pre_touch) < 0)
+    if (aeron_map_existing_log(&_log_buffer->mapped_raw_log, os_ipc_command, pre_touch) < 0)
     {
-        aeron_set_err(aeron_errcode(), "could not map existing file %s: %s", log_file, aeron_errmsg());
+        aeron_set_err(aeron_errcode(), "could not map existing file %" PRId64 ": %s", os_ipc_command->correlation_id, aeron_errmsg());
         aeron_free(_log_buffer);
         return -1;
     }

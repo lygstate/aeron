@@ -77,6 +77,14 @@ typedef struct aeron_publication_command_stct
 }
 aeron_publication_command_t;
 
+typedef struct aeron_image_os_ipc_command_stct
+{
+    uint64_t buffer_length;
+    int64_t correlation_id;
+    uint32_t process_id;
+    uint32_t padding;
+} aeron_image_os_ipc_command_t;
+
 typedef struct aeron_publication_buffers_ready_stct
 {
     int64_t correlation_id;
@@ -85,7 +93,8 @@ typedef struct aeron_publication_buffers_ready_stct
     int32_t stream_id;
     int32_t position_limit_counter_id;
     int32_t channel_status_indicator_id;
-    int32_t log_file_length;
+    uint64_t buffer_length;
+    aeron_image_os_ipc_command_t os_ipc;
 }
 aeron_publication_buffers_ready_t;
 
@@ -112,6 +121,8 @@ typedef struct aeron_image_buffers_ready_stct
     int32_t stream_id;
     int64_t subscriber_registration_id;
     int32_t subscriber_position_id;
+    aeron_image_os_ipc_command_t os_ipc;
+    int32_t source_identity_length;
 }
 aeron_image_buffers_ready_t;
 

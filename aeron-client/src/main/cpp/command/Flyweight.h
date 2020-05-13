@@ -22,6 +22,24 @@
 namespace aeron { namespace command
 {
 
+#pragma pack(push)
+#pragma pack(4)
+
+struct BuffersReadyOsIpcDefn
+{
+    uint64_t bufferLength;
+    int64_t correlationId;
+    uint32_t processId;
+    uint32_t padding;
+};
+
+#pragma pack(pop)
+
+inline bool operator==(const BuffersReadyOsIpcDefn& lhs, const BuffersReadyOsIpcDefn& rhs)
+{
+    return memcmp(&lhs, &rhs, sizeof(lhs)) == 0;
+}
+
 template<typename struct_t>
 class Flyweight
 {

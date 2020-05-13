@@ -62,9 +62,10 @@ bool MemoryMappedFile::fill(FileHandle fd, size_t size, uint8_t value)
     return true;
 }
 
-MemoryMappedFile::ptr_t MemoryMappedFile::createNew(const char *filename, size_t offset, size_t size)
+MemoryMappedFile::ptr_t MemoryMappedFile::createNew(const BuffersReadyOsIpcDefn &osIpc, uint64_t offset, size_t size)
 {
-    FileHandle fd;
+    FileHandle fd = {0};
+#if 0
     fd.handle = CreateFile(filename, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (fd.handle == INVALID_HANDLE_VALUE)
@@ -86,13 +87,15 @@ MemoryMappedFile::ptr_t MemoryMappedFile::createNew(const char *filename, size_t
         throw IOException(std::string("Failed to write to file: ") + filename + " " + toString(GetLastError()), SOURCEINFO);
     }
 
+#endif
+
     auto obj = MemoryMappedFile::ptr_t(new MemoryMappedFile(fd, offset, size, false));
     fd.handle = INVALID_HANDLE_VALUE;
 
     return obj;
 }
 
-MemoryMappedFile::ptr_t MemoryMappedFile::mapExisting(const char *filename, size_t offset, size_t size, bool readOnly)
+MemoryMappedFile::ptr_t MemoryMappedFile::mapExisting(const char *filename, uint64_t offset, size_t size, bool readOnly)
 {
     FileHandle fd;
     DWORD dwDesiredAccess = readOnly ? GENERIC_READ : (GENERIC_READ | GENERIC_WRITE);
@@ -118,6 +121,18 @@ MemoryMappedFile::ptr_t MemoryMappedFile::mapExisting(const char *filename, size
 
     return obj;
 }
+
+MemoryMappedFile::ptr_t MemoryMappedFile::mapExisting(const BuffersReadyOsIpcDefn &osIpc)
+{
+    printf("Need implement %s\n", __FUNCTION__);
+    return NULL;
+}
+
+void MemoryMappedFile::close(const BuffersReadyOsIpcDefn &osIpc)
+{
+    printf("TODO: MemoryMappedFile::remove\n");
+}
+
 #else
 bool MemoryMappedFile::fill(FileHandle fd, size_t size, uint8_t value)
 {
@@ -145,7 +160,7 @@ bool MemoryMappedFile::fill(FileHandle fd, size_t size, uint8_t value)
     return true;
 }
 
-MemoryMappedFile::ptr_t MemoryMappedFile::createNew(const char *filename, off_t offset, size_t size)
+MemoryMappedFile::ptr_t MemoryMappedFile::createNew(const char *filename, uint64_t offset, size_t size)
 {
     FileHandle fd;
     fd.handle = open(filename, O_RDWR | O_CREAT, 0666);
@@ -169,7 +184,7 @@ MemoryMappedFile::ptr_t MemoryMappedFile::createNew(const char *filename, off_t 
     return MemoryMappedFile::ptr_t(new MemoryMappedFile(fd, offset, size, false));
 }
 
-MemoryMappedFile::ptr_t MemoryMappedFile::mapExisting(const char *filename, off_t offset, size_t length, bool readOnly)
+MemoryMappedFile::ptr_t MemoryMappedFile::mapExisting(const char *filename, uint64_t offset, size_t length, bool readOnly)
 {
     FileHandle fd;
     fd.handle = ::open(filename, (readOnly ? O_RDONLY : O_RDWR), 0666);
@@ -207,7 +222,7 @@ size_t MemoryMappedFile::getMemorySize() const
 size_t MemoryMappedFile::m_page_size = getPageSize();
 
 #ifdef _WIN32
-MemoryMappedFile::MemoryMappedFile(FileHandle fd, size_t offset, size_t length, bool readOnly)
+MemoryMappedFile::MemoryMappedFile(FileHandle fd, uint64_t offset, size_t length, bool readOnly)
 {
     m_file = fd.handle;
 
@@ -259,7 +274,7 @@ MemoryMappedFile::~MemoryMappedFile()
     cleanUp();
 }
 
-uint8_t * MemoryMappedFile::doMapping(size_t size, FileHandle fd, size_t offset, bool readOnly)
+uint8_t * MemoryMappedFile::doMapping(size_t size, FileHandle fd, uint64_t offset, bool readOnly)
 {
     DWORD flProtect = readOnly ? PAGE_READONLY : PAGE_READWRITE;
     m_mapping = CreateFileMapping(fd.handle, NULL, flProtect, 0, (DWORD)size, NULL);
@@ -295,7 +310,7 @@ std::int64_t MemoryMappedFile::getFileSize(const char *filename)
 }
 
 #else
-MemoryMappedFile::MemoryMappedFile(FileHandle fd, off_t offset, size_t length, bool readOnly)
+MemoryMappedFile::MemoryMappedFile(FileHandle fd, uint64_t offset, size_t length, bool readOnly)
 {
     if (0 == length && 0 == offset)
     {

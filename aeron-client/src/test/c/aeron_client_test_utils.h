@@ -33,21 +33,18 @@ namespace aeron
 namespace test
 {
 
-std::string tempFileName()
+inline aeron_image_os_ipc_mapped_t tempOsIpc()
 {
-    char filename[AERON_MAX_PATH];
-
-    aeron_temp_filename(filename, sizeof(filename));
-    return std::string(filename);
+    aeron_image_os_ipc_mapped_t os_ipc;
+    aeron_os_ipc_location(&os_ipc, rand());
+    return os_ipc;
 }
 
-void createLogFile(std::string &filename)
+void createLogFile(aeron_image_os_ipc_mapped_t &os_ipc)
 {
-    aeron_mapped_file_t mappedFile = {
-        nullptr,
-        AERON_LOGBUFFER_TERM_MIN_LENGTH * 3 + AERON_LOGBUFFER_META_DATA_LENGTH };
+    aeron_mapped_file_t mappedFile;
 
-    if (aeron_map_new_file(&mappedFile, filename.c_str(), false) < 0)
+    if (aeron_map_new_os_ipc(&mappedFile, &os_ipc, AERON_LOGBUFFER_TERM_MIN_LENGTH * 3 + AERON_LOGBUFFER_META_DATA_LENGTH, false) < 0)
     {
         throw std::runtime_error("could not create log file: " + std::string(aeron_errmsg()));
     }

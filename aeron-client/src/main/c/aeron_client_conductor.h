@@ -20,7 +20,7 @@
 #include "concurrent/aeron_mpsc_concurrent_array_queue.h"
 #include "concurrent/aeron_broadcast_receiver.h"
 #include "concurrent/aeron_mpsc_rb.h"
-#include "command/aeron_control_protocol.h"
+#include "util/aeron_fileutil.h"
 #include "aeronc.h"
 #include "concurrent/aeron_counters_manager.h"
 #include "collections/aeron_int64_to_ptr_hash_map.h"
@@ -250,8 +250,7 @@ int aeron_client_conductor_on_subscription_ready(
 int aeron_client_conductor_on_available_image(
     aeron_client_conductor_t *conductor,
     aeron_image_buffers_ready_t *response,
-    int32_t log_file_length,
-    const char *log_file,
+    aeron_image_os_ipc_command_t *os_ipc_command,
     int32_t source_identity_length,
     const char *source_identity);
 int aeron_client_conductor_on_unavailable_image(
@@ -264,7 +263,7 @@ int aeron_client_conductor_on_counter_ready(
 int aeron_client_conductor_get_or_create_log_buffer(
     aeron_client_conductor_t *conductor,
     aeron_log_buffer_t **log_buffer,
-    const char *log_file,
+    aeron_image_os_ipc_command_t *os_ipc_command,
     int64_t original_registration_id,
     bool pre_touch);
 int aeron_client_conductor_release_log_buffer(
