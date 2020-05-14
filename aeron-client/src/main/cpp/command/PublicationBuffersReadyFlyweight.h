@@ -30,26 +30,30 @@ namespace aeron { namespace command
 *
 * 0                   1                   2                   3
 * 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ 0
 * |                      Correlation ID                           |
 * |                                                               |
-* +---------------------------------------------------------------+
+* +---------------------------------------------------------------+ 8
 * |                      Registration ID                          |
 * |                                                               |
-* +---------------------------------------------------------------+
+* +---------------------------------------------------------------+ 16
 * |                        Session ID                             |
-* +---------------------------------------------------------------+
+* +---------------------------------------------------------------+ 20
 * |                         Stream ID                             |
-* +---------------------------------------------------------------+
+* +---------------------------------------------------------------+ 24
 * |                  Position Limit Counter Id                    |
-* +---------------------------------------------------------------+
+* +---------------------------------------------------------------+ 28
 * |                  Channel Status Indicator ID                  |
-* +---------------------------------------------------------------+
-* |                       Log File Length                         |
-* +---------------------------------------------------------------+
-* |                        Log File Name                         ...
-* ...                                                             |
-* +---------------------------------------------------------------+
+* +---------------------------------------------------------------+ 32
+* |                         Buffer Length                         |
+* |                                                               |
+* +---------------------------------------------------------------+ 40
+* |                          Buffer Id                            |
+* |                                                               |
+* +---------------------------------------------------------------+ 48
+* |                          Process Id                           |
+* |                                                               |
+* +---------------------------------------------------------------+ 56
 */
 
 #pragma pack(push)
@@ -62,8 +66,7 @@ struct PublicationBuffersReadyDefn
     std::int32_t streamId;
     std::int32_t positionLimitCounterId;
     std::int32_t channelStatusIndicatorId;
-    std::int32_t logFileLength;
-    std::int8_t logFileData[1];
+    BuffersReadyOsIpcDefn osIpc;
 };
 #pragma pack(pop)
 
@@ -143,20 +146,20 @@ public:
         return *this;
     }
 
-    inline std::string logFileName() const
+    inline const BuffersReadyOsIpcDefn& osIpc() const
     {
-        return stringGet(offsetof(PublicationBuffersReadyDefn, logFileLength));
+        return m_struct.osIpc;
     }
 
-    inline this_t &logFileName(const std::string &value)
+    inline this_t &osIpc(const BuffersReadyOsIpcDefn &value)
     {
-        stringPut(offsetof(PublicationBuffersReadyDefn, logFileLength), value);
+        m_struct.osIpc = value;
         return *this;
     }
 
     std::int32_t length() const
     {
-        return offsetof(PublicationBuffersReadyDefn, logFileData) + m_struct.logFileLength;
+        return sizeof(PublicationBuffersReadyDefn);
     }
 };
 

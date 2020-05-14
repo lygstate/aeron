@@ -55,7 +55,6 @@ typedef struct aeron_ipc_publication_stct
     }
     conductor_fields;
 
-    char *log_file_name;
     int64_t term_window_length;
     int64_t trip_gain;
     int64_t unblock_timeout_ns;
@@ -63,7 +62,7 @@ typedef struct aeron_ipc_publication_stct
     int32_t session_id;
     int32_t stream_id;
     int32_t initial_term_id;
-    size_t log_file_name_length;
+    aeron_image_os_ipc_mapped_t os_ipc;
     size_t position_bits_to_shift;
     bool is_exclusive;
     aeron_map_raw_log_close_func_t map_raw_log_close_func;

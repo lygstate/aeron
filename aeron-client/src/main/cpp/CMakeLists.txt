@@ -15,6 +15,10 @@
 #
 
 SET(SOURCE
+    ${AERON_C_CLIENT_SOURCE_PATH}/concurrent/aeron_thread.c
+    ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_error.c
+    ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_fileutil.c
+    ${AERON_C_CLIENT_SOURCE_PATH}/aeron_alloc.c
     Publication.cpp
     ExclusivePublication.cpp
     Subscription.cpp
@@ -28,6 +32,10 @@ SET(SOURCE
     util/CommandOptionParser.cpp)
 
 SET(HEADERS
+    ${AERON_C_CLIENT_SOURCE_PATH}/concurrent/aeron_thread.h
+    ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_error.h
+    ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_fileutil.h
+    ${AERON_C_CLIENT_SOURCE_PATH}/aeron_alloc.h
     ClientConductor.h
     CncFileDescriptor.h
     Image.h
@@ -134,11 +142,15 @@ add_library(aeron_client STATIC ${SOURCE} ${HEADERS})
 add_library(aeron_client_shared SHARED ${SOURCE} ${HEADERS})
 
 target_include_directories(aeron_client
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+    PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${AERON_C_CLIENT_SOURCE_PATH}
     )
 
 target_include_directories(aeron_client_shared
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+    PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${AERON_C_CLIENT_SOURCE_PATH}
     )
 
 if (MSVC)
@@ -155,6 +167,7 @@ target_compile_definitions(aeron_client
     PUBLIC $<$<NOT:$<CONFIG:Debug>>:DISABLE_BOUNDS_CHECKS>
     # relative file paths for use in exceptions
     PUBLIC "__PROJECT_SOURCE_DIR__=\"${NATIVE_PROJECT_SOURCE_DIR}\""
+    PRIVATE "AERON_CPP_CLIENT=1"
     )
 
 target_compile_definitions(aeron_client_shared
@@ -162,7 +175,10 @@ target_compile_definitions(aeron_client_shared
     # relative file paths for use in exceptions
     PUBLIC "__PROJECT_SOURCE_DIR__=\"${NATIVE_PROJECT_SOURCE_DIR}\""
     PUBLIC CLIENT_SHARED DLL_EXPORT
+    PRIVATE "AERON_CPP_CLIENT=1"
     )
+
+
 
 if (NOT WIN32)
     set(CMAKE_THREAD_PREFER_PTHREAD TRUE)

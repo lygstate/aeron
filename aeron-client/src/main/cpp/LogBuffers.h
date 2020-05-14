@@ -30,11 +30,12 @@ namespace aeron
 using namespace aeron::util;
 using namespace aeron::concurrent;
 using namespace aeron::concurrent::logbuffer;
+using namespace aeron::command;
 
 class CLIENT_EXPORT LogBuffers
 {
 public:
-    explicit LogBuffers(const char *filename, bool preTouch);
+    explicit LogBuffers(const BuffersReadyOsIpcDefn &osIpc, bool preTouch);
 
     LogBuffers(std::uint8_t *address, std::int64_t logLength, std::int32_t termLength);
 

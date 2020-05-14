@@ -85,7 +85,6 @@ typedef struct aeron_publication_image_stct
     aeron_loss_reporter_t *loss_reporter;
     aeron_loss_reporter_entry_offset_t loss_reporter_offset;
 
-    char *log_file_name;
     int32_t session_id;
     int32_t stream_id;
     int32_t initial_term_id;
@@ -94,7 +93,8 @@ typedef struct aeron_publication_image_stct
     int32_t term_length;
     int32_t mtu_length;
     int32_t term_length_mask;
-    size_t log_file_name_length;
+    aeron_image_os_ipc_mapped_t os_ipc;
+
     size_t position_bits_to_shift;
     aeron_map_raw_log_close_func_t map_raw_log_close_func;
 
@@ -271,11 +271,6 @@ inline bool aeron_publication_image_is_accepting_subscriptions(aeron_publication
 inline void aeron_publication_image_disconnect_endpoint(aeron_publication_image_t *image)
 {
     image->endpoint = NULL;
-}
-
-inline const char *aeron_publication_image_log_file_name(aeron_publication_image_t *image)
-{
-    return image->log_file_name;
 }
 
 inline int64_t aeron_publication_image_registration_id(aeron_publication_image_t *image)
