@@ -122,7 +122,7 @@ public:
     }
 
     ClientConductorTest() :
-        m_logFileName(tempFileName()),
+        m_os_ipc(tempOsIpc()),
         m_on_new_publication(nullptr),
         m_on_new_exclusive_publication(nullptr)
     {
@@ -189,7 +189,7 @@ public:
         m_context->cnc_map.addr = nullptr;
         aeron_context_close(m_context);
 
-        ::unlink(m_logFileName.c_str());
+        aeron_close_os_ipc(&m_os_ipc);
     }
 
     static void ToDriverHandler(int32_t type_id, const void *buffer, size_t length, void *clientd)
@@ -239,7 +239,7 @@ public:
         return work_count;
     }
 
-    void transmitOnPublicationReady(aeron_async_add_publication_t *async, const std::string &logFile, bool isExclusive)
+    void transmitOnPublicationReady(aeron_async_add_publication_t *async, aeron_image_os_ipc_mapped_t &os_ipc, bool isExclusive)
     {
         char response_buffer[sizeof(aeron_publication_buffers_ready_t) + AERON_MAX_PATH];
         auto response = reinterpret_cast<aeron_publication_buffers_ready_t *>(response_buffer);
@@ -251,14 +251,13 @@ public:
         response->session_id = SESSION_ID;
         response->position_limit_counter_id = position_limit_counter_id;
         response->channel_status_indicator_id = channel_status_indicator_id;
-        response->log_file_length = static_cast<int32_t>(logFile.length());
-        memcpy(response_buffer + sizeof(aeron_publication_buffers_ready_t), logFile.c_str(), logFile.length());
+        response->os_ipc = os_ipc.command;
 
         if (aeron_broadcast_transmitter_transmit(
             &m_to_clients,
             isExclusive ? AERON_RESPONSE_ON_EXCLUSIVE_PUBLICATION_READY : AERON_RESPONSE_ON_PUBLICATION_READY,
             response_buffer,
-            sizeof(aeron_publication_buffers_ready_t) + logFile.length()) < 0)
+            sizeof(aeron_publication_buffers_ready_t)) < 0)
         {
             throw std::runtime_error("error transmitting ON_PUBLICATION_READY: " + std::string(aeron_errmsg()));
         }
@@ -328,7 +327,7 @@ protected:
     std::unique_ptr<uint8_t[]> m_cnc;
     aeron_mpsc_rb_t m_to_driver;
     aeron_broadcast_transmitter_t m_to_clients;
-    std::string m_logFileName;
+    aeron_image_os_ipc_mapped_t m_os_ipc;
 
     std::function<void(int32_t, const void *, size_t)> m_to_driver_handler;
 
@@ -354,8 +353,8 @@ TEST_F(ClientConductorTest, shouldAddPublicationSuccessfully)
     ASSERT_EQ(aeron_async_add_publication_poll(&publication, async), 0) << aeron_errmsg();
     ASSERT_TRUE(nullptr == publication);
 
-    transmitOnPublicationReady(async, m_logFileName, false);
-    createLogFile(m_logFileName);
+    createLogFile(m_os_ipc);
+    transmitOnPublicationReady(async, m_os_ipc, false);
     doWork();
 
     ASSERT_GT(aeron_async_add_publication_poll(&publication, async), 0) << aeron_errmsg();
@@ -409,8 +408,8 @@ TEST_F(ClientConductorTest, shouldAddExclusivePublicationSuccessfully)
     ASSERT_EQ(aeron_async_add_exclusive_publication_poll(&publication, async), 0) << aeron_errmsg();
     ASSERT_TRUE(nullptr == publication);
 
-    transmitOnPublicationReady(async, m_logFileName, true);
-    createLogFile(m_logFileName);
+    createLogFile(m_os_ipc);
+    transmitOnPublicationReady(async, m_os_ipc, true);
     doWork();
 
     ASSERT_GT(aeron_async_add_exclusive_publication_poll(&publication, async), 0) << aeron_errmsg();
@@ -593,8 +592,8 @@ TEST_F(ClientConductorTest, shouldAddPublicationAndHandleOnNewPublication)
         was_on_new_publication_called = true;
     };
 
-    transmitOnPublicationReady(async, m_logFileName, false);
-    createLogFile(m_logFileName);
+    createLogFile(m_os_ipc);
+    transmitOnPublicationReady(async, m_os_ipc, false);
     doWork();
 
     EXPECT_TRUE(was_on_new_publication_called);
@@ -630,8 +629,8 @@ TEST_F(ClientConductorTest, shouldAddExclusivePublicationAndHandleOnNewPublicati
         was_on_new_exclusive_publication_called = true;
     };
 
-    transmitOnPublicationReady(async, m_logFileName, false);
-    createLogFile(m_logFileName);
+    createLogFile(m_os_ipc);
+    transmitOnPublicationReady(async, m_os_ipc, false);
     doWork();
 
     EXPECT_TRUE(was_on_new_exclusive_publication_called);

@@ -23,7 +23,7 @@
 #include <sys/types.h>
 
 #include "util/aeron_platform.h"
-#include "concurrent/aeron_logbuffer_descriptor.h"
+#include "command/aeron_control_protocol.h"
 
 typedef struct aeron_mapped_file_stct
 {
@@ -43,85 +43,37 @@ int aeron_is_directory(const char* path);
 int aeron_delete_directory(const char* directory);
 
 int aeron_map_new_file(aeron_mapped_file_t *mapped_file, const char *path, bool fill_with_zeroes);
-int aeron_map_existing_file(aeron_mapped_file_t *mapped_file, const char *path);
+int aeron_map_existing_file(aeron_mapped_file_t *mapped_file, const char *path, size_t size, uint64_t offset, bool read_only);
 int aeron_unmap(aeron_mapped_file_t *mapped_file);
 
-#if defined(AERON_COMPILER_GCC)
-#include <unistd.h>
-
-#define aeron_mkdir mkdir
-#define aeron_ftruncate ftruncate
-#elif defined(AERON_COMPILER_MSVC) && defined(AERON_CPU_X64)
-#define _CRT_RAND_S
-#include <io.h>
-#include <direct.h>
-#include <process.h>
-#include <WinSock2.h>
-#include <Windows.h>
-
-#define S_IRWXU 0
-#define S_IRWXG 0
-#define S_IRWXO 0
-
-int aeron_ftruncate(int fd, off_t length);
+int64_t aeron_file_length(const char *path);
+int aeron_unlink(const char *path);
+int64_t aeron_get_pid();
+int aeron_ftruncate(int fd, uint64_t length);
 int aeron_mkdir(const char *path, int permission);
+
+typedef struct aeron_image_os_ipc_mapped_stct
+{
+    aeron_image_os_ipc_command_t command;
+#ifdef _WIN32
+    void* handle;
 #endif
+}
+aeron_image_os_ipc_mapped_t;
+
+int aeron_map_new_os_ipc(aeron_mapped_file_t *mapped_file, aeron_image_os_ipc_mapped_t *os_ipc, uint64_t length, bool fill_with_zeroes);
+int aeron_map_existing_os_ipc(aeron_mapped_file_t *mapped_file, const aeron_image_os_ipc_command_t *os_ipc_command, bool read_only);
+int aeron_close_os_ipc(aeron_image_os_ipc_mapped_t *os_ipc);
 
 typedef uint64_t (*aeron_usable_fs_space_func_t)(const char *path);
 
-int64_t aeron_file_length(const char *path);
 uint64_t aeron_usable_fs_space(const char *path);
 uint64_t aeron_usable_fs_space_disabled(const char *path);
 
-#define AERON_LOG_META_DATA_SECTION_INDEX (AERON_LOGBUFFER_PARTITION_COUNT)
+void aeron_os_ipc_location(
+    aeron_image_os_ipc_mapped_t *os_ipc,
+    int64_t buffer_id);
 
-typedef struct aeron_mapped_raw_log_stct
-{
-    aeron_mapped_buffer_t term_buffers[AERON_LOGBUFFER_PARTITION_COUNT];
-    aeron_mapped_buffer_t log_meta_data;
-    aeron_mapped_file_t mapped_file;
-    size_t term_length;
-}
-aeron_mapped_raw_log_t;
-
-#define AERON_PUBLICATIONS_DIR "publications"
-#define AERON_IMAGES_DIR "images"
-
-int aeron_ipc_publication_location(
-    char *dst,
-    size_t length,
-    const char *aeron_dir,
-    int64_t correlation_id);
-
-int aeron_network_publication_location(
-    char *dst,
-    size_t length,
-    const char *aeron_dir,
-    int64_t correlation_id);
-
-int aeron_publication_image_location(
-    char *dst,
-    size_t length,
-    const char *aeron_dir,
-    int64_t correlation_id);
-
-size_t aeron_temp_filename(char *filename, size_t length);
-
-typedef int (*aeron_map_raw_log_func_t)(aeron_mapped_raw_log_t *, const char *, bool, uint64_t, uint64_t);
-typedef int (*aeron_map_raw_log_close_func_t)(aeron_mapped_raw_log_t *, const char *filename);
-
-int aeron_map_raw_log(
-    aeron_mapped_raw_log_t *mapped_raw_log,
-    const char *path,
-    bool use_sparse_files,
-    uint64_t term_length,
-    uint64_t page_size);
-
-int aeron_map_existing_log(
-    aeron_mapped_raw_log_t *mapped_raw_log,
-    const char *path,
-    bool pre_touch);
-
-int aeron_map_raw_log_close(aeron_mapped_raw_log_t *mapped_raw_log, const char *filename);
+void aeron_default_dir(char *target, size_t length);
 
 #endif //AERON_FILEUTIL_H

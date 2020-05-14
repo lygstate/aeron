@@ -71,7 +71,6 @@ typedef struct aeron_network_publication_stct
     aeron_flow_control_strategy_t *flow_control;
     aeron_clock_cache_t *cached_clock;
 
-    char *log_file_name;
     int64_t term_buffer_length;
     int64_t term_window_length;
     int64_t trip_gain;
@@ -86,7 +85,7 @@ typedef struct aeron_network_publication_stct
     int32_t stream_id;
     int32_t initial_term_id;
     int32_t term_length_mask;
-    size_t log_file_name_length;
+    aeron_image_os_ipc_mapped_t os_ipc;
     size_t position_bits_to_shift;
     size_t mtu_length;
     bool is_exclusive;
