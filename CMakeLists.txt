@@ -82,7 +82,7 @@ if (AERON_TESTS)
     set(GMOCK_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/cppbuild/googletest-release-1.10.0)
 
     set(gtest_force_shared_crt ON CACHE BOOL "")
-    add_subdirectory(${GMOCK_SOURCE_DIR} EXCLUDE_FROM_ALL)
+    add_subdirectory(${GMOCK_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/3rd/gmock EXCLUDE_FROM_ALL)
     set(GMOCK_LIBS gmock gtest gtest_main)
 endif ()
 
@@ -95,7 +95,7 @@ if (AERON_BUILD_SAMPLES)
     aeron_extract(HDRHISTOGRAM_C_EXTRACTED ${CMAKE_CURRENT_SOURCE_DIR}/cppbuild/HdrHistogram_c-0.9.13.zip ${CMAKE_CURRENT_BINARY_DIR}/cppbuild HdrHistogram_c-0.9.13)
     set(HDRHISTOGRAM_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/cppbuild/HdrHistogram_c-0.9.13)
 
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cppbuild/zlib-cmake EXCLUDE_FROM_ALL)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cppbuild/zlib-cmake ${CMAKE_CURRENT_BINARY_DIR}/3rd/zlib EXCLUDE_FROM_ALL)
     set(ZLIB_LIBRARIES zlibstatic)
     set(ZLIB_INCLUDE_DIRS ${ZLIB_SOURCE_DIR})
 
@@ -106,7 +106,7 @@ if (AERON_BUILD_SAMPLES)
     set(HDR_VERSION ${HDR_SOVERSION_CURRENT}.${HDR_SOVERSION_AGE}.${HDR_SOVERSION_REVISION})
     set(HDR_SOVERSION ${HDR_SOVERSION_CURRENT})
     set(HDR_HISTOGRAM_BUILD_SHARED OFF CACHE BOOL "")
-    add_subdirectory(${HDRHISTOGRAM_SOURCE_DIR}/src EXCLUDE_FROM_ALL)
+    add_subdirectory(${HDRHISTOGRAM_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/3rd/hdrhistogram EXCLUDE_FROM_ALL)
     set(HDRHISTOGRAM_LIBS hdr_histogram_static)
 endif ()
 
