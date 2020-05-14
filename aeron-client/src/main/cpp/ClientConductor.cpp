@@ -618,7 +618,7 @@ void ClientConductor::onNewPublication(
     std::int32_t sessionId,
     std::int32_t publicationLimitCounterId,
     std::int32_t channelStatusIndicatorId,
-    const std::string &logFileName)
+    const BuffersReadyOsIpcDefn &osIpc)
 {
     std::lock_guard<std::recursive_mutex> lock(m_adminLock);
 
@@ -631,7 +631,7 @@ void ClientConductor::onNewPublication(
         state.m_sessionId = sessionId;
         state.m_publicationLimitCounterId = publicationLimitCounterId;
         state.m_channelStatusId = channelStatusIndicatorId;
-        state.m_buffers = getLogBuffers(originalRegistrationId, logFileName, state.m_channel);
+        state.m_buffers = getLogBuffers(originalRegistrationId, osIpc, state.m_channel);
         state.m_originalRegistrationId = originalRegistrationId;
 
         CallbackGuard callbackGuard(m_isInCallback);
@@ -646,7 +646,7 @@ void ClientConductor::onNewExclusivePublication(
     std::int32_t sessionId,
     std::int32_t publicationLimitCounterId,
     std::int32_t channelStatusIndicatorId,
-    const std::string &logFileName)
+     const BuffersReadyOsIpcDefn &osIpc)
 {
     assert(registrationId == originalRegistrationId);
 
@@ -661,7 +661,7 @@ void ClientConductor::onNewExclusivePublication(
         state.m_sessionId = sessionId;
         state.m_publicationLimitCounterId = publicationLimitCounterId;
         state.m_channelStatusId = channelStatusIndicatorId;
-        state.m_buffers = getLogBuffers(originalRegistrationId, logFileName, state.m_channel);
+        state.m_buffers = getLogBuffers(originalRegistrationId, osIpc, state.m_channel);
 
         CallbackGuard callbackGuard(m_isInCallback);
         m_onNewExclusivePublicationHandler(state.m_channel, streamId, sessionId, registrationId);
@@ -865,7 +865,7 @@ void ClientConductor::onAvailableImage(
     std::int32_t sessionId,
     std::int32_t subscriberPositionId,
     std::int64_t subscriptionRegistrationId,
-    const std::string &logFilename,
+    const BuffersReadyOsIpcDefn &osIpc,
     const std::string &sourceIdentity)
 {
     std::lock_guard<std::recursive_mutex> lock(m_adminLock);
@@ -886,7 +886,7 @@ void ClientConductor::onAvailableImage(
                 subscriptionRegistrationId,
                 sourceIdentity,
                 subscriberPosition,
-                getLogBuffers(correlationId, logFilename, entry.m_channel),
+                getLogBuffers(correlationId, osIpc, entry.m_channel),
                 m_errorHandler);
 
             CallbackGuard callbackGuard(m_isInCallback);

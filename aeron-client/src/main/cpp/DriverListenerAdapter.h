@@ -63,7 +63,7 @@ public:
                             publicationReady.sessionId(),
                             publicationReady.positionLimitCounterId(),
                             publicationReady.channelStatusIndicatorId(),
-                            publicationReady.logFileName());
+                            publicationReady.osIpc());
                         break;
                     }
 
@@ -78,7 +78,7 @@ public:
                             publicationReady.sessionId(),
                             publicationReady.positionLimitCounterId(),
                             publicationReady.channelStatusIndicatorId(),
-                            publicationReady.logFileName());
+                            publicationReady.osIpc());
                         break;
                     }
 
@@ -101,7 +101,7 @@ public:
                             imageReady.sessionId(),
                             imageReady.subscriberPositionId(),
                             imageReady.subscriptionRegistrationId(),
-                            imageReady.logFileName(),
+                            imageReady.osIpc(),
                             imageReady.sourceIdentity());
                         break;
                     }

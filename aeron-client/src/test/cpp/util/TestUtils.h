@@ -17,43 +17,19 @@
 #ifndef AERON_TESTUTILS_H
 #define AERON_TESTUTILS_H
 
-#if !defined(_MSC_VER)
-#include <unistd.h>
-#include <cstdlib>
-#else
-#include <windows.h>
-#endif
-
+#include <stdlib.h>
 #include <util/Exceptions.h>
+#include <command/Flyweight.h>
 
 namespace aeron { namespace test {
 
-std::string makeTempFileName()
+command::BuffersReadyOsIpcDefn makeTempOsIpc()
 {
-#if !defined(_MSC_VER)
-    char rawname[] = "/tmp/aeron-c.XXXXXXX";
-    int fd = ::mkstemp(rawname);
-    ::close(fd);
-    ::unlink(rawname);
-
-    return std::string(rawname);
-
-#else
-    char tmpdir[MAX_PATH+1];
-    char tmpfile[MAX_PATH];
-
-    if (::GetTempPath(MAX_PATH, &tmpdir[0]) > 0)
-    {
-        if (::GetTempFileName(tmpdir, TEXT("aeron-c"), 0, &tmpfile[0]) != 0)
-        {
-            return std::string(tmpfile);
-        }
-    }
-
-    throw util::IllegalStateException("could not make unique temp filename", SOURCEINFO);
-#endif
+    command::BuffersReadyOsIpcDefn osIpc;
+    osIpc.bufferLength = 0;
+    osIpc.bufferId = rand();
+    osIpc.processId = -1;
 }
-
 inline void throwIllegalArgumentException()
 {
     throw util::IllegalArgumentException("Intentional IllegalArgumentException", SOURCEINFO);
