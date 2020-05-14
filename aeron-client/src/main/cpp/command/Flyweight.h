@@ -18,26 +18,18 @@
 
 #include <string>
 #include <concurrent/AtomicBuffer.h>
-
-namespace aeron { namespace command
+extern "C"
 {
+#include <command/aeron_control_protocol.h>
+}
 
-#pragma pack(push)
-#pragma pack(4)
-
-struct BuffersReadyOsIpcDefn
-{
-    uint64_t bufferLength;
-    int64_t bufferId;
-    int64_t processId;
-};
-
-#pragma pack(pop)
-
-inline bool operator==(const BuffersReadyOsIpcDefn& lhs, const BuffersReadyOsIpcDefn& rhs)
+inline bool operator==(const aeron_image_os_ipc_t& lhs, const aeron_image_os_ipc_t& rhs)
 {
     return memcmp(&lhs, &rhs, sizeof(lhs)) == 0;
 }
+
+namespace aeron { namespace command
+{
 
 template<typename struct_t>
 class Flyweight

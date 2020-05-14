@@ -40,8 +40,8 @@ class ClientConductorTest : public testing::Test, public ClientConductorFixture
 {
 public:
     ClientConductorTest() :
-        m_c_os_ipc(makeTempOsIpc()),
-        m_c_os_ipc2(makeTempOsIpc())
+        m_os_ipc(makeTempOsIpc()),
+        m_os_ipc2(makeTempOsIpc())
     {
     }
 
@@ -50,11 +50,9 @@ public:
         m_toDriver.fill(0);
         m_toClients.fill(0);
         MemoryMappedFile::ptr_t logbuffer1 = MemoryMappedFile::createNew(
-            m_c_os_ipc, 0, static_cast<size_t>(LOG_FILE_LENGTH));
+            m_os_ipc, 0, static_cast<size_t>(LOG_FILE_LENGTH));
         MemoryMappedFile::ptr_t logbuffer2 = MemoryMappedFile::createNew(
-            m_c_os_ipc2, 0, static_cast<size_t>(LOG_FILE_LENGTH));
-        m_os_ipc = MemoryMappedFile::convertOsIpc(m_c_os_ipc);
-        m_os_ipc2 = MemoryMappedFile::convertOsIpc(m_c_os_ipc2);
+            m_os_ipc2, 0, static_cast<size_t>(LOG_FILE_LENGTH));
         m_manyToOneRingBuffer.consumerHeartbeatTime(m_currentTime);
 
         AtomicBuffer logMetaDataBuffer;
@@ -74,15 +72,13 @@ public:
 
     virtual void TearDown()
     {
-        MemoryMappedFile::close(m_c_os_ipc);
-        MemoryMappedFile::close(m_c_os_ipc2);
+        MemoryMappedFile::close(m_os_ipc);
+        MemoryMappedFile::close(m_os_ipc2);
     }
 
 protected:
-    BuffersReadyOsIpcDefn m_os_ipc;
-    BuffersReadyOsIpcDefn m_os_ipc2;
-    aeron_image_os_ipc_mapped_t m_c_os_ipc;
-    aeron_image_os_ipc_mapped_t m_c_os_ipc2;
+    aeron_image_os_ipc_t m_os_ipc;
+    aeron_image_os_ipc_t m_os_ipc2;
 };
 
 TEST_F(ClientConductorTest, shouldReturnNullForUnknownPublication)

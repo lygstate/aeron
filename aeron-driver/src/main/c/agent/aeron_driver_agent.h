@@ -61,7 +61,7 @@ typedef struct aeron_driver_agent_map_raw_log_op_header_stct
             aeron_mapped_raw_log_t log;
             int result;
             uintptr_t addr;
-            aeron_image_os_ipc_mapped_t os_ipc;
+            aeron_image_os_ipc_t os_ipc;
         }
         map_raw_log;
 

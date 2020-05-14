@@ -29,12 +29,12 @@ extern "C"
 namespace aeron { namespace util
 {
 
-MemoryMappedFile::ptr_t MemoryMappedFile::createNew(aeron_image_os_ipc_mapped_t &osIpc, uint64_t offset, size_t size)
+MemoryMappedFile::ptr_t MemoryMappedFile::createNew(aeron_image_os_ipc_t &osIpc, uint64_t offset, size_t size)
 {
     aeron_mapped_file_t mapped_file;
     if (aeron_map_new_os_ipc(&mapped_file, &osIpc, size, true) < 0)
     {
-        throw IOException(std::string("Failed to create file buffer id: ") + toString(osIpc.command.buffer_id) + " " + aeron_errmsg(), SOURCEINFO);
+        throw IOException(std::string("Failed to create file buffer id: ") + toString(osIpc.buffer_id) + " " + aeron_errmsg(), SOURCEINFO);
     }
 
     auto obj = MemoryMappedFile::ptr_t(new MemoryMappedFile(mapped_file));
@@ -52,19 +52,19 @@ MemoryMappedFile::ptr_t MemoryMappedFile::mapExisting(const char *filename, uint
     return obj;
 }
 
-MemoryMappedFile::ptr_t MemoryMappedFile::mapExisting(const BuffersReadyOsIpcDefn &osIpc)
+MemoryMappedFile::ptr_t MemoryMappedFile::mapExisting(const aeron_image_os_ipc_t &osIpc)
 {
     aeron_mapped_file_t mapped_file;
-    if (aeron_map_existing_os_ipc(&mapped_file, (const aeron_image_os_ipc_command_t *)&osIpc, true) < 0)
+    if (aeron_map_existing_os_ipc(&mapped_file, (const aeron_image_os_ipc_t *)&osIpc, true) < 0)
     {
-        throw IOException(std::string("Failed to create file buffer id: ") + toString(osIpc.bufferId) + " " + aeron_errmsg(), SOURCEINFO);
+        throw IOException(std::string("Failed to create file buffer id: ") + toString(osIpc.buffer_id) + " " + aeron_errmsg(), SOURCEINFO);
     }
 
     auto obj = MemoryMappedFile::ptr_t(new MemoryMappedFile(mapped_file));
     return obj;
 }
 
-void MemoryMappedFile::close(aeron_image_os_ipc_mapped_t &osIpc)
+void MemoryMappedFile::close(aeron_image_os_ipc_t &osIpc)
 {
     aeron_close_os_ipc(&osIpc);
 }

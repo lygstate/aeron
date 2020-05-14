@@ -142,11 +142,11 @@ static void test_increment_nano_time(int64_t delta_ns)
 }
 
 static int test_malloc_map_raw_log(
-    aeron_mapped_raw_log_t *log, aeron_image_os_ipc_mapped_t *os_ipc, bool use_sparse_file, uint64_t term_length, uint64_t page_size)
+    aeron_mapped_raw_log_t *log, aeron_image_os_ipc_t *os_ipc, bool use_sparse_file, uint64_t term_length, uint64_t page_size)
 {
     uint64_t log_length = aeron_logbuffer_compute_log_length(term_length, page_size);
 
-    os_ipc->command.buffer_length = log_length;
+    os_ipc->buffer_length = log_length;
     log->mapped_file.length = 0;
     log->mapped_file.addr = malloc(log_length);
 
@@ -168,7 +168,7 @@ static int test_malloc_map_raw_log(
     return 0;
 }
 
-static int test_malloc_map_raw_log_close(aeron_mapped_raw_log_t *log, aeron_image_os_ipc_mapped_t *os_ipc)
+static int test_malloc_map_raw_log_close(aeron_mapped_raw_log_t *log, aeron_image_os_ipc_t *os_ipc)
 {
     free(log->mapped_file.addr);
     return 0;

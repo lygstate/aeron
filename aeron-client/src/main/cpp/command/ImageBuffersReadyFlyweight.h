@@ -53,12 +53,15 @@ namespace aeron { namespace command
 * +---------------------------------------------------------------+ 36
 * |                          Buffer Id                            |
 * |                                                               |
-* +---------------------------------------------------------------+
+* +---------------------------------------------------------------+ 44
 * |                          Process Id                           |
 * |                                                               |
-* +---------------------------------------------------------------+
+* +---------------------------------------------------------------+ 52
+* |                           Os Handle                           |
+* |                                                               |
+* +---------------------------------------------------------------+ 60
 * |                    Source identity Length                     |
-* +---------------------------------------------------------------+
+* +---------------------------------------------------------------+ 64
 * |                    Source identity Name                      ...
 *...                                                              |
 * +---------------------------------------------------------------+
@@ -73,7 +76,7 @@ struct ImageBuffersReadyDefn
     std::int32_t streamId;
     std::int64_t subscriptionRegistrationId;
     std::int32_t subscriberPositionId;
-    BuffersReadyOsIpcDefn osIpc;
+    aeron_image_os_ipc_t osIpc;
 };
 #pragma pack(pop)
 
@@ -142,12 +145,12 @@ public:
         return *this;
     }
 
-    inline const BuffersReadyOsIpcDefn& osIpc() const
+    inline const aeron_image_os_ipc_t& osIpc() const
     {
         return m_struct.osIpc;
     }
 
-    inline this_t &osIpc(const BuffersReadyOsIpcDefn &value)
+    inline this_t &osIpc(const aeron_image_os_ipc_t &value)
     {
         m_struct.osIpc = value;
         return *this;

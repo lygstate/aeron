@@ -36,18 +36,13 @@ class CLIENT_EXPORT MemoryMappedFile
 public:
     typedef std::shared_ptr<MemoryMappedFile> ptr_t;
 
-    static ptr_t createNew(aeron_image_os_ipc_mapped_t &osIpc, uint64_t offset, size_t length);
+    static ptr_t createNew(aeron_image_os_ipc_t &osIpc, uint64_t offset, size_t length);
 
     static ptr_t mapExisting(const char* filename, uint64_t offset, size_t length, bool readOnly = false);
     static ptr_t mapExisting(const char* filename, bool readOnly = false);
-    static ptr_t mapExisting(const BuffersReadyOsIpcDefn &osIpc);
+    static ptr_t mapExisting(const aeron_image_os_ipc_t &osIpc);
 
-    static BuffersReadyOsIpcDefn convertOsIpc(aeron_image_os_ipc_mapped_t &osIpc)
-    {
-        return *(BuffersReadyOsIpcDefn*)&osIpc.command;
-    } 
-
-    static void close(aeron_image_os_ipc_mapped_t &osIpc);
+    static void close(aeron_image_os_ipc_t &osIpc);
 
     inline static ptr_t mapExistingReadOnly(const char* filename)
     {

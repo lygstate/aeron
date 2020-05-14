@@ -16,22 +16,22 @@ typedef struct aeron_mapped_raw_log_stct
 }
 aeron_mapped_raw_log_t;
 
-typedef int (*aeron_map_raw_log_func_t)(aeron_mapped_raw_log_t *, aeron_image_os_ipc_mapped_t *os_ipc, bool, uint64_t, uint64_t);
-typedef int (*aeron_map_raw_log_close_func_t)(aeron_mapped_raw_log_t *, aeron_image_os_ipc_mapped_t *os_ipc);
+typedef int (*aeron_map_raw_log_func_t)(aeron_mapped_raw_log_t *, aeron_image_os_ipc_t *os_ipc, bool, uint64_t, uint64_t);
+typedef int (*aeron_map_raw_log_close_func_t)(aeron_mapped_raw_log_t *, aeron_image_os_ipc_t *os_ipc);
 
 int aeron_map_raw_log(
     aeron_mapped_raw_log_t *mapped_raw_log,
-    aeron_image_os_ipc_mapped_t *os_ipc,
+    aeron_image_os_ipc_t *os_ipc,
     bool use_sparse_files,
     uint64_t term_length,
     uint64_t page_size);
 
 int aeron_map_existing_log(
     aeron_mapped_raw_log_t *mapped_raw_log,
-    aeron_image_os_ipc_command_t *os_ipc_command,
+    aeron_image_os_ipc_t *os_ipc,
     bool pre_touch);
 
-int aeron_map_raw_log_close(aeron_mapped_raw_log_t *mapped_raw_log, aeron_image_os_ipc_mapped_t *os_ipc);
+int aeron_map_raw_log_close(aeron_mapped_raw_log_t *mapped_raw_log, aeron_image_os_ipc_t *os_ipc);
 
 
 #endif /* AERON_MAP_RAW_LOG_H */

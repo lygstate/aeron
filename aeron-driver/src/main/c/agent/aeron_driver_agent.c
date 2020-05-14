@@ -166,7 +166,7 @@ void aeron_driver_agent_conductor_to_client_interceptor(
 
 int aeron_driver_agent_map_raw_log_interceptor(
     aeron_mapped_raw_log_t *mapped_raw_log,
-    aeron_image_os_ipc_mapped_t *os_ipc,
+    aeron_image_os_ipc_t *os_ipc,
     bool use_sparse_files,
     uint64_t term_length,
     uint64_t page_size)
@@ -188,7 +188,7 @@ int aeron_driver_agent_map_raw_log_interceptor(
     return result;
 }
 
-int aeron_driver_agent_map_raw_log_close_interceptor(aeron_mapped_raw_log_t *mapped_raw_log, aeron_image_os_ipc_mapped_t *os_ipc)
+int aeron_driver_agent_map_raw_log_close_interceptor(aeron_mapped_raw_log_t *mapped_raw_log, aeron_image_os_ipc_t *os_ipc)
 {
     uint8_t buffer[AERON_MAX_PATH + sizeof(aeron_driver_agent_map_raw_log_op_header_t)];
     aeron_driver_agent_map_raw_log_op_header_t *hdr = (aeron_driver_agent_map_raw_log_op_header_t *)buffer;
@@ -982,7 +982,7 @@ void aeron_driver_agent_log_dissector(int32_t msg_type_id, const void *message, 
                 "[%s] MAP_RAW_LOG %p, buffer id:" "%"PRId64 " = %d\n",
                 dissect_timestamp(hdr->time_ms),
                 (void *)hdr->map_raw.map_raw_log.addr,
-                hdr->map_raw.map_raw_log.os_ipc.command.buffer_id,
+                hdr->map_raw.map_raw_log.os_ipc.buffer_id,
                 hdr->map_raw.map_raw_log.result);
             break;
         }

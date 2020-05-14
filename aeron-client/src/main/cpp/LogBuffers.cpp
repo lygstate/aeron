@@ -22,9 +22,9 @@ namespace aeron
 using namespace aeron::util;
 using namespace aeron::concurrent::logbuffer;
 
-LogBuffers::LogBuffers(const BuffersReadyOsIpcDefn &osIpc, bool preTouch)
+LogBuffers::LogBuffers(const aeron_image_os_ipc_t &osIpc, bool preTouch)
 {
-    const std::int64_t logLength = osIpc.bufferLength;
+    const std::int64_t logLength = osIpc.buffer_length;
 
     m_memoryMappedFiles = MemoryMappedFile::mapExisting(osIpc);
 

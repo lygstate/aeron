@@ -146,7 +146,7 @@ public:
         std::int32_t sessionId,
         std::int32_t publicationLimitCounterId,
         std::int32_t channelStatusIndicatorId,
-        const BuffersReadyOsIpcDefn &osIpc);
+        const aeron_image_os_ipc_t &osIpc);
 
     void onNewExclusivePublication(
         std::int64_t registrationId,
@@ -155,7 +155,7 @@ public:
         std::int32_t sessionId,
         std::int32_t publicationLimitCounterId,
         std::int32_t channelStatusIndicatorId,
-        const BuffersReadyOsIpcDefn &osIpc);
+        const aeron_image_os_ipc_t &osIpc);
 
     void onSubscriptionReady(std::int64_t registrationId, std::int32_t channelStatusId);
 
@@ -171,7 +171,7 @@ public:
         std::int32_t sessionId,
         std::int32_t subscriberPositionId,
         std::int64_t subscriptionRegistrationId,
-        const BuffersReadyOsIpcDefn &osIpc,
+        const aeron_image_os_ipc_t &osIpc,
         const std::string &sourceIdentity);
 
     void onUnavailableImage(std::int64_t correlationId, std::int64_t subscriptionRegistrationId);
@@ -524,7 +524,7 @@ private:
     }
 
     inline std::shared_ptr<LogBuffers> getLogBuffers(
-        std::int64_t registrationId, const BuffersReadyOsIpcDefn &osIpc, const std::string &channel)
+        std::int64_t registrationId, const aeron_image_os_ipc_t &osIpc, const std::string &channel)
     {
         auto it = m_logBuffersByRegistrationId.find(registrationId);
         if (it == m_logBuffersByRegistrationId.end())

@@ -52,7 +52,7 @@ TEST_F(DriverConductorIpcTest, shouldBeAbleToAddSingleIpcPublication)
 
             EXPECT_EQ(response.streamId(), STREAM_ID_1);
             EXPECT_EQ(response.correlationId(), pub_id);
-            EXPECT_GT(response.osIpc().bufferLength, 0u);
+            EXPECT_GT(response.osIpc().buffer_length, 0u);
         };
 
     EXPECT_EQ(readAllBroadcastsFromConductor(handler), 1u);
@@ -281,7 +281,7 @@ TEST_F(DriverConductorIpcTest, shouldBeAbleToAddSingleIpcSubscriptionThenAddSing
 
     size_t response_number = 0;
     int32_t session_id = 0;
-    command::BuffersReadyOsIpcDefn os_ipc;
+    aeron_image_os_ipc_t os_ipc;
     auto handler =
         [&](std::int32_t msgTypeId, AtomicBuffer &buffer, util::index_t offset, util::index_t length)
         {
@@ -341,7 +341,7 @@ TEST_F(DriverConductorIpcTest, shouldBeAbleToAddSingleIpcPublicationThenAddSingl
 
     size_t response_number = 0;
     int32_t session_id = 0;
-    command::BuffersReadyOsIpcDefn os_ipc;
+    aeron_image_os_ipc_t os_ipc;
     auto handler =
         [&](std::int32_t msgTypeId, AtomicBuffer &buffer, util::index_t offset, util::index_t length)
         {
@@ -402,7 +402,7 @@ TEST_F(DriverConductorIpcTest, shouldBeAbleToAddMultipleIpcSubscriptionWithSameS
 
     size_t response_number = 0;
     int32_t session_id = 0;
-    command::BuffersReadyOsIpcDefn os_ipc;
+    aeron_image_os_ipc_t os_ipc;
     auto handler =
         [&](std::int32_t msgTypeId, AtomicBuffer &buffer, util::index_t offset, util::index_t length)
         {
@@ -477,8 +477,8 @@ TEST_F(DriverConductorIpcTest, shouldAddSingleIpcSubscriptionThenAddMultipleExcl
     size_t response_number = 0;
     int32_t session_id_1 = 0;
     int32_t session_id_2 = 0;
-    command::BuffersReadyOsIpcDefn os_ipc_1;
-    command::BuffersReadyOsIpcDefn os_ipc_2;
+    aeron_image_os_ipc_t os_ipc_1;
+    aeron_image_os_ipc_t os_ipc_2;
     auto handler =
         [&](std::int32_t msgTypeId, AtomicBuffer &buffer, util::index_t offset, util::index_t length)
         {
@@ -564,7 +564,7 @@ TEST_F(DriverConductorIpcTest, shouldNotLinkSubscriptionOnAddPublicationAfterFir
 
     size_t response_number = 0;
     int32_t session_id = 0;
-    command::BuffersReadyOsIpcDefn os_ipc;
+    aeron_image_os_ipc_t os_ipc;
     auto handler =
         [&](std::int32_t msgTypeId, AtomicBuffer &buffer, util::index_t offset, util::index_t length)
         {
@@ -798,7 +798,7 @@ TEST_F(DriverConductorIpcTest, shouldBeAbleToAddSingleNetworkPublicationWithSpec
             EXPECT_EQ(response.streamId(), STREAM_ID_1);
             EXPECT_EQ(response.sessionId(), SESSION_ID_1);
             EXPECT_EQ(response.correlationId(), pub_id);
-            EXPECT_GT(response.osIpc().bufferLength, 0u);
+            EXPECT_GT(response.osIpc().buffer_length, 0u);
         };
 
     EXPECT_EQ(readAllBroadcastsFromConductor(handler), 1u);
@@ -858,7 +858,7 @@ TEST_F(DriverConductorIpcTest, shouldBeAbleToAddSingleIpcPublicationThatAvoidCol
             EXPECT_EQ(response.streamId(), STREAM_ID_1);
             EXPECT_NE(response.sessionId(), next_session_id);
             EXPECT_EQ(response.correlationId(), pub_id);
-            EXPECT_GT(response.osIpc().bufferLength, 0u);
+            EXPECT_GT(response.osIpc().buffer_length, 0u);
         };
 
     EXPECT_EQ(readAllBroadcastsFromConductor(handler), 1u);

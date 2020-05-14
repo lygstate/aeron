@@ -54,7 +54,7 @@ public:
         }
 
         std::for_each(m_os_ipcs.begin(), m_os_ipcs.end(),
-            [&](aeron_image_os_ipc_mapped_t &os_ipc)
+            [&](aeron_image_os_ipc_t &os_ipc)
             {
                 aeron_close_os_ipc(&os_ipc);
             });
@@ -86,11 +86,11 @@ public:
     {
         aeron_image_t *image = nullptr;
         aeron_log_buffer_t *log_buffer = nullptr;
-        aeron_image_os_ipc_mapped_t m_os_ipc;
+        aeron_image_os_ipc_t m_os_ipc;
 
         createLogFile(m_os_ipc);
 
-        if (aeron_log_buffer_create(&log_buffer, &m_os_ipc.command, m_correlationId, false) < 0)
+        if (aeron_log_buffer_create(&log_buffer, &m_os_ipc, m_correlationId, false) < 0)
         {
             throw std::runtime_error("could not create log_buffer: " + std::string(aeron_errmsg()));
         }
@@ -120,7 +120,7 @@ protected:
     int64_t m_correlationId = 0;
 
     std::map<int64_t, aeron_image_t *> m_imageMap;
-    std::vector<aeron_image_os_ipc_mapped_t> m_os_ipcs;
+    std::vector<aeron_image_os_ipc_t> m_os_ipcs;
 };
 
 TEST_F(SubscriptionTest, shouldInitAndDelete)

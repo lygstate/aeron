@@ -360,7 +360,7 @@ void aeron_driver_conductor_on_available_image(
     int64_t correlation_id,
     int32_t stream_id,
     int32_t session_id,
-    aeron_image_os_ipc_mapped_t *os_ipc,
+    aeron_image_os_ipc_t *os_ipc,
     int32_t subscriber_position_id,
     int64_t subscriber_registration_id,
     const char *source_identity,
@@ -405,7 +405,7 @@ int aeron_driver_conductor_link_subscribable(
     int64_t now_ns,
     size_t source_identity_length,
     const char *source_identity,
-    aeron_image_os_ipc_mapped_t *os_ipc);
+    aeron_image_os_ipc_t *os_ipc);
 
 void aeron_driver_conductor_unlink_subscribable(aeron_subscription_link_t *link, aeron_subscribable_t *subscribable);
 

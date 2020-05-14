@@ -33,7 +33,7 @@ typedef struct aeron_log_buffer_stct
 aeron_log_buffer_t;
 
 int aeron_log_buffer_create(
-    aeron_log_buffer_t **log_buffer, aeron_image_os_ipc_command_t *os_ipc_command, int64_t correlation_id, bool pre_touch);
+    aeron_log_buffer_t **log_buffer, aeron_image_os_ipc_t *os_ipc, int64_t correlation_id, bool pre_touch);
 int aeron_log_buffer_delete(aeron_log_buffer_t *log_buffer);
 
 #endif //AERON_C_LOG_BUFFER_H

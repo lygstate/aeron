@@ -95,7 +95,7 @@ int aeron_publication_image_create(
     if (context->map_raw_log_func(
         &_image->mapped_raw_log, &_image->os_ipc, is_sparse, (uint64_t)term_buffer_length, context->file_page_size) < 0)
     {
-        aeron_set_err(aeron_errcode(), "error mapping network raw log buffer id:%"PRIi64 " error:%s", _image->os_ipc.command.buffer_id, aeron_errmsg());
+        aeron_set_err(aeron_errcode(), "error mapping network raw log buffer id:%"PRIi64 " error:%s", _image->os_ipc.buffer_id, aeron_errmsg());
         aeron_free(_image);
         return -1;
     }

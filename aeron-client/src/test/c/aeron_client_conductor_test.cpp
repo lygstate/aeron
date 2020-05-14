@@ -239,7 +239,7 @@ public:
         return work_count;
     }
 
-    void transmitOnPublicationReady(aeron_async_add_publication_t *async, aeron_image_os_ipc_mapped_t &os_ipc, bool isExclusive)
+    void transmitOnPublicationReady(aeron_async_add_publication_t *async, aeron_image_os_ipc_t &os_ipc, bool isExclusive)
     {
         char response_buffer[sizeof(aeron_publication_buffers_ready_t) + AERON_MAX_PATH];
         auto response = reinterpret_cast<aeron_publication_buffers_ready_t *>(response_buffer);
@@ -251,7 +251,7 @@ public:
         response->session_id = SESSION_ID;
         response->position_limit_counter_id = position_limit_counter_id;
         response->channel_status_indicator_id = channel_status_indicator_id;
-        response->os_ipc = os_ipc.command;
+        response->os_ipc = os_ipc;
 
         if (aeron_broadcast_transmitter_transmit(
             &m_to_clients,
@@ -327,7 +327,7 @@ protected:
     std::unique_ptr<uint8_t[]> m_cnc;
     aeron_mpsc_rb_t m_to_driver;
     aeron_broadcast_transmitter_t m_to_clients;
-    aeron_image_os_ipc_mapped_t m_os_ipc;
+    aeron_image_os_ipc_t m_os_ipc;
 
     std::function<void(int32_t, const void *, size_t)> m_to_driver_handler;
 

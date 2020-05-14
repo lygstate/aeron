@@ -85,7 +85,7 @@ typedef struct aeron_network_publication_stct
     int32_t stream_id;
     int32_t initial_term_id;
     int32_t term_length_mask;
-    aeron_image_os_ipc_mapped_t os_ipc;
+    aeron_image_os_ipc_t os_ipc;
     size_t position_bits_to_shift;
     size_t mtu_length;
     bool is_exclusive;

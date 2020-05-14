@@ -26,9 +26,9 @@ extern "C"
 
 namespace aeron { namespace test {
 
-aeron_image_os_ipc_mapped_t makeTempOsIpc()
+aeron_image_os_ipc_t makeTempOsIpc()
 {
-    aeron_image_os_ipc_mapped_t osIpc;
+    aeron_image_os_ipc_t osIpc;
     aeron_os_ipc_location(&osIpc, rand());
     return osIpc;
 }

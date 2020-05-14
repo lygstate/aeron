@@ -33,14 +33,14 @@ namespace aeron
 namespace test
 {
 
-inline aeron_image_os_ipc_mapped_t tempOsIpc()
+inline aeron_image_os_ipc_t tempOsIpc()
 {
-    aeron_image_os_ipc_mapped_t os_ipc;
+    aeron_image_os_ipc_t os_ipc;
     aeron_os_ipc_location(&os_ipc, rand());
     return os_ipc;
 }
 
-void createLogFile(aeron_image_os_ipc_mapped_t &os_ipc)
+void createLogFile(aeron_image_os_ipc_t &os_ipc)
 {
     aeron_mapped_file_t mappedFile;
 

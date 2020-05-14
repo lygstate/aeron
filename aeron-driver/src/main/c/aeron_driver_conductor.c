@@ -589,7 +589,7 @@ void aeron_driver_conductor_on_available_image(
     int64_t correlation_id,
     int32_t stream_id,
     int32_t session_id,
-    aeron_image_os_ipc_mapped_t *os_ipc,
+    aeron_image_os_ipc_t *os_ipc,
     int32_t subscriber_position_id,
     int64_t subscriber_registration_id,
     const char *source_identity,
@@ -608,7 +608,7 @@ void aeron_driver_conductor_on_available_image(
     response->session_id = session_id;
     response->subscriber_position_id = subscriber_position_id;
     response->subscriber_registration_id = subscriber_registration_id;
-    response->os_ipc = os_ipc->command;
+    response->os_ipc = *os_ipc;
     response->source_identity_length = (int32_t)source_identity_length;
     ptr += sizeof(aeron_image_buffers_ready_t);
     memcpy(ptr, source_identity, source_identity_length);
@@ -1477,7 +1477,7 @@ void aeron_driver_conductor_on_publication_ready(
     int32_t position_limit_counter_id,
     int32_t channel_status_indicator_id,
     bool is_exclusive,
-    aeron_image_os_ipc_mapped_t *os_ipc)
+    aeron_image_os_ipc_t *os_ipc)
 {
     char response_buffer[sizeof(aeron_publication_buffers_ready_t)];
     aeron_publication_buffers_ready_t *response = (aeron_publication_buffers_ready_t *)response_buffer;
@@ -1488,7 +1488,7 @@ void aeron_driver_conductor_on_publication_ready(
     response->session_id = session_id;
     response->position_limit_counter_id = position_limit_counter_id;
     response->channel_status_indicator_id = channel_status_indicator_id;
-    response->os_ipc = os_ipc->command;
+    response->os_ipc = *os_ipc;
 
     aeron_driver_conductor_client_transmit(
         conductor,
@@ -2074,7 +2074,7 @@ int aeron_driver_conductor_link_subscribable(
     int64_t now_ns,
     size_t source_identity_length,
     const char *source_identity,
-    aeron_image_os_ipc_mapped_t *os_ipc)
+    aeron_image_os_ipc_t *os_ipc)
 {
     int ensure_capacity_result = 0, result = -1;
 
@@ -3436,7 +3436,7 @@ extern void aeron_driver_conductor_on_available_image(
     int64_t correlation_id,
     int32_t stream_id,
     int32_t session_id,
-    aeron_image_os_ipc_mapped_t *os_ipc,
+    aeron_image_os_ipc_t *os_ipc,
     int32_t subscriber_position_id,
     int64_t subscriber_registration_id,
     const char *source_identity,

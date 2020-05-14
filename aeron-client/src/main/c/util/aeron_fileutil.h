@@ -52,18 +52,9 @@ int64_t aeron_get_pid();
 int aeron_ftruncate(int fd, uint64_t length);
 int aeron_mkdir(const char *path, int permission);
 
-typedef struct aeron_image_os_ipc_mapped_stct
-{
-    aeron_image_os_ipc_command_t command;
-#ifdef _WIN32
-    void* handle;
-#endif
-}
-aeron_image_os_ipc_mapped_t;
-
-int aeron_map_new_os_ipc(aeron_mapped_file_t *mapped_file, aeron_image_os_ipc_mapped_t *os_ipc, uint64_t length, bool fill_with_zeroes);
-int aeron_map_existing_os_ipc(aeron_mapped_file_t *mapped_file, const aeron_image_os_ipc_command_t *os_ipc_command, bool read_only);
-int aeron_close_os_ipc(aeron_image_os_ipc_mapped_t *os_ipc);
+int aeron_map_new_os_ipc(aeron_mapped_file_t *mapped_file, aeron_image_os_ipc_t *os_ipc, uint64_t length, bool fill_with_zeroes);
+int aeron_map_existing_os_ipc(aeron_mapped_file_t *mapped_file, const aeron_image_os_ipc_t *os_ipc, bool read_only);
+int aeron_close_os_ipc(aeron_image_os_ipc_t *os_ipc);
 
 typedef uint64_t (*aeron_usable_fs_space_func_t)(const char *path);
 
@@ -71,7 +62,7 @@ uint64_t aeron_usable_fs_space(const char *path);
 uint64_t aeron_usable_fs_space_disabled(const char *path);
 
 void aeron_os_ipc_location(
-    aeron_image_os_ipc_mapped_t *os_ipc,
+    aeron_image_os_ipc_t *os_ipc,
     int64_t buffer_id);
 
 void aeron_default_dir(char *target, size_t length);

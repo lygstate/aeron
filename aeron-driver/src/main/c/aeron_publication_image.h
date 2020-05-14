@@ -93,7 +93,7 @@ typedef struct aeron_publication_image_stct
     int32_t term_length;
     int32_t mtu_length;
     int32_t term_length_mask;
-    aeron_image_os_ipc_mapped_t os_ipc;
+    aeron_image_os_ipc_t os_ipc;
 
     size_t position_bits_to_shift;
     aeron_map_raw_log_close_func_t map_raw_log_close_func;

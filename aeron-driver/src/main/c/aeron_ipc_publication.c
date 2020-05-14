@@ -63,7 +63,7 @@ int aeron_ipc_publication_create(
     if (context->map_raw_log_func(
         &_pub->mapped_raw_log, &_pub->os_ipc, params->is_sparse, params->term_length, context->file_page_size) < 0)
     {
-        aeron_set_err(aeron_errcode(), "error mapping IPC raw log buffer id:%"PRIi64 " error:%s", _pub->os_ipc.command.buffer_id, aeron_errmsg());
+        aeron_set_err(aeron_errcode(), "error mapping IPC raw log buffer id:%"PRIi64 " error:%s", _pub->os_ipc.buffer_id, aeron_errmsg());
         aeron_free(_pub);
         return -1;
     }

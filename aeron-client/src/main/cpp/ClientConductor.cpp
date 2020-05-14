@@ -618,7 +618,7 @@ void ClientConductor::onNewPublication(
     std::int32_t sessionId,
     std::int32_t publicationLimitCounterId,
     std::int32_t channelStatusIndicatorId,
-    const BuffersReadyOsIpcDefn &osIpc)
+    const aeron_image_os_ipc_t &osIpc)
 {
     std::lock_guard<std::recursive_mutex> lock(m_adminLock);
 
@@ -646,7 +646,7 @@ void ClientConductor::onNewExclusivePublication(
     std::int32_t sessionId,
     std::int32_t publicationLimitCounterId,
     std::int32_t channelStatusIndicatorId,
-     const BuffersReadyOsIpcDefn &osIpc)
+     const aeron_image_os_ipc_t &osIpc)
 {
     assert(registrationId == originalRegistrationId);
 
@@ -865,7 +865,7 @@ void ClientConductor::onAvailableImage(
     std::int32_t sessionId,
     std::int32_t subscriberPositionId,
     std::int64_t subscriptionRegistrationId,
-    const BuffersReadyOsIpcDefn &osIpc,
+    const aeron_image_os_ipc_t &osIpc,
     const std::string &sourceIdentity)
 {
     std::lock_guard<std::recursive_mutex> lock(m_adminLock);

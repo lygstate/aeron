@@ -1148,14 +1148,14 @@ int aeron_client_conductor_on_error(aeron_client_conductor_t *conductor, aeron_e
 int aeron_client_conductor_get_or_create_log_buffer(
     aeron_client_conductor_t *conductor,
     aeron_log_buffer_t **log_buffer,
-    aeron_image_os_ipc_command_t *os_ipc_command,
+    aeron_image_os_ipc_t *os_ipc,
     int64_t original_registration_id,
     bool pre_touch)
 {
     if (NULL == (*log_buffer = aeron_int64_to_ptr_hash_map_get(
         &conductor->log_buffer_by_id_map, original_registration_id)))
     {
-        if (aeron_log_buffer_create(log_buffer, os_ipc_command, original_registration_id, pre_touch) < 0)
+        if (aeron_log_buffer_create(log_buffer, os_ipc, original_registration_id, pre_touch) < 0)
         {
             return -1;
         }
@@ -1404,7 +1404,7 @@ aeron_subscription_t *aeron_client_conductor_find_subscription_by_id(
 int aeron_client_conductor_on_available_image(
     aeron_client_conductor_t *conductor,
     aeron_image_buffers_ready_t *response,
-    aeron_image_os_ipc_command_t *os_ipc_command,
+    aeron_image_os_ipc_t *os_ipc,
     int32_t source_identity_length,
     const char *source_identity)
 {
@@ -1421,7 +1421,7 @@ int aeron_client_conductor_on_available_image(
         aeron_log_buffer_t *log_buffer = NULL;
 
         if (aeron_client_conductor_get_or_create_log_buffer(
-            conductor, &log_buffer, os_ipc_command, response->correlation_id, conductor->pre_touch) < 0)
+            conductor, &log_buffer, os_ipc, response->correlation_id, conductor->pre_touch) < 0)
         {
             return -1;
         }

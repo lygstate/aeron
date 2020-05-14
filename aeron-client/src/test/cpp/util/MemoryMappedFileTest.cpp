@@ -35,7 +35,7 @@ TEST(mmfileTest, createCheck)
     MemoryMappedFile::ptr_t m;
 
     const size_t size = 10000;
-    aeron_image_os_ipc_mapped_t osIpc = makeTempOsIpc();
+    aeron_image_os_ipc_t osIpc = makeTempOsIpc();
     ASSERT_NO_THROW({
         m = MemoryMappedFile::createNew(osIpc, 0, size);
     });
@@ -56,7 +56,7 @@ TEST(mmfileTest, writeReadCheck)
     MemoryMappedFile::ptr_t m;
 
     const size_t size = 10000;
-    aeron_image_os_ipc_mapped_t osIpc = makeTempOsIpc();
+    aeron_image_os_ipc_t osIpc = makeTempOsIpc();
 
     ASSERT_NO_THROW({
         m = MemoryMappedFile::createNew(osIpc, 0, size);
@@ -70,7 +70,7 @@ TEST(mmfileTest, writeReadCheck)
     m.reset();
 
     ASSERT_NO_THROW({
-        m = MemoryMappedFile::mapExisting(MemoryMappedFile::convertOsIpc(osIpc));
+        m = MemoryMappedFile::mapExisting(osIpc);
     });
 
     ASSERT_EQ(m->getMemorySize(), size);

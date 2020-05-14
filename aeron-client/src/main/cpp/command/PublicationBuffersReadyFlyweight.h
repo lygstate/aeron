@@ -54,6 +54,9 @@ namespace aeron { namespace command
 * |                          Process Id                           |
 * |                                                               |
 * +---------------------------------------------------------------+ 56
+* |                           Os Handle                           |
+* |                                                               |
+* +---------------------------------------------------------------+ 64
 */
 
 #pragma pack(push)
@@ -66,7 +69,7 @@ struct PublicationBuffersReadyDefn
     std::int32_t streamId;
     std::int32_t positionLimitCounterId;
     std::int32_t channelStatusIndicatorId;
-    BuffersReadyOsIpcDefn osIpc;
+    aeron_image_os_ipc_t osIpc;
 };
 #pragma pack(pop)
 
@@ -146,12 +149,12 @@ public:
         return *this;
     }
 
-    inline const BuffersReadyOsIpcDefn& osIpc() const
+    inline const aeron_image_os_ipc_t& osIpc() const
     {
         return m_struct.osIpc;
     }
 
-    inline this_t &osIpc(const BuffersReadyOsIpcDefn &value)
+    inline this_t &osIpc(const aeron_image_os_ipc_t &value)
     {
         m_struct.osIpc = value;
         return *this;

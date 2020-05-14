@@ -108,10 +108,10 @@ TEST (commandTests, testPublicationReadyFlyweight)
     AtomicBuffer ab(&testBuffer[0], testBuffer.size());
     const index_t BASE_OFFSET = 256;
 
-    BuffersReadyOsIpcDefn osIpc;
-    osIpc.bufferLength = 1023;
-    osIpc.bufferId = 133;
-    osIpc.processId = 123;
+    aeron_image_os_ipc_t osIpc;
+    osIpc.buffer_length = 1023;
+    osIpc.buffer_id = 133;
+    osIpc.process_id = 123;
 
     ASSERT_NO_THROW({
         PublicationBuffersReadyFlyweight cmd(ab, BASE_OFFSET);
@@ -126,7 +126,7 @@ TEST (commandTests, testPublicationReadyFlyweight)
         ASSERT_EQ(ab.getInt32(BASE_OFFSET + 20), 0x01010101);
         ASSERT_EQ(ab.getInt32(BASE_OFFSET + 24), 10);
         ASSERT_EQ(ab.getInt32(BASE_OFFSET + 28), 11);
-        ASSERT_EQ(ab.getInt64(BASE_OFFSET + 32), osIpc.bufferLength);
+        ASSERT_EQ(ab.getInt64(BASE_OFFSET + 32), osIpc.buffer_length);
 
         ASSERT_EQ(cmd.correlationId(), -1);
         ASSERT_EQ(cmd.registrationId(), 1);
@@ -135,7 +135,7 @@ TEST (commandTests, testPublicationReadyFlyweight)
         ASSERT_EQ(cmd.positionLimitCounterId(), 10);
         ASSERT_EQ(cmd.osIpc(), osIpc);
 
-        ASSERT_EQ(cmd.length(), static_cast<int>(32 + 24));
+        ASSERT_EQ(cmd.length(), static_cast<int>(32 + 32));
     });
 }
 
@@ -145,10 +145,10 @@ TEST (commandTests, testImageBuffersReadyFlyweight)
     AtomicBuffer ab(&testBuffer[0], testBuffer.size());
     const index_t BASE_OFFSET = 0;
 
-    BuffersReadyOsIpcDefn osIpc;
-    osIpc.bufferLength = 1029;
-    osIpc.bufferId = 135;
-    osIpc.processId = 126;
+    aeron_image_os_ipc_t osIpc;
+    osIpc.buffer_length = 1029;
+    osIpc.buffer_id = 135;
+    osIpc.process_id = 126;
 
     std::string sourceInfoData = "sourceinfodata";
 
@@ -171,7 +171,7 @@ TEST (commandTests, testImageBuffersReadyFlyweight)
         ASSERT_EQ(ab.getInt64(BASE_OFFSET + 16), 2);
         ASSERT_EQ(ab.getInt32(BASE_OFFSET + 24), 1);
 
-        const index_t startOfSourceIdentityAligned = BASE_OFFSET + 28 + 24;
+        const index_t startOfSourceIdentityAligned = BASE_OFFSET + 28 + 32;
         ASSERT_EQ(ab.getStringLength(startOfSourceIdentityAligned), static_cast<int>(sourceInfoData.length()));
         ASSERT_EQ(ab.getString(startOfSourceIdentityAligned), sourceInfoData);
 
@@ -183,7 +183,7 @@ TEST (commandTests, testImageBuffersReadyFlyweight)
         ASSERT_EQ(cmd.osIpc(), osIpc);
         ASSERT_EQ(cmd.sourceIdentity(), sourceInfoData);
 
-        size_t expectedLengthRaw = 28 + 24 + sizeof(std::int32_t) + sourceInfoData.length();
+        size_t expectedLengthRaw = 28 + 32 + sizeof(std::int32_t) + sourceInfoData.length();
         int32_t expectedLength = static_cast<int32_t>(BitUtil::align(static_cast<index_t>(expectedLengthRaw), 4));
 
         ASSERT_EQ(cmd.length(), expectedLength);

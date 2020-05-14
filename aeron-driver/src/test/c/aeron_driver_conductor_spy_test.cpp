@@ -138,7 +138,7 @@ TEST_F(DriverConductorSpyTest, shouldBeAbleToAddSingleSubscriptionThenAddSingleP
 
     size_t response_number = 0;
     int32_t session_id = 0;
-    command::BuffersReadyOsIpcDefn os_ipc;
+    aeron_image_os_ipc_t os_ipc;
     auto handler =
         [&](std::int32_t msgTypeId, AtomicBuffer &buffer, util::index_t offset, util::index_t length)
         {
@@ -200,7 +200,7 @@ TEST_F(DriverConductorSpyTest, shouldBeAbleToAddSingleSubscriptionWithTagThenAdd
 
     size_t response_number = 0;
     int32_t session_id = 0;
-    command::BuffersReadyOsIpcDefn os_ipc;
+    aeron_image_os_ipc_t os_ipc;
     auto handler =
         [&](std::int32_t msgTypeId, AtomicBuffer &buffer, util::index_t offset, util::index_t length)
         {
@@ -261,7 +261,7 @@ TEST_F(DriverConductorSpyTest, shouldBeAbleToAddSinglePublicationThenAddSingleSu
 
     size_t response_number = 0;
     int32_t session_id = 0;
-    command::BuffersReadyOsIpcDefn os_ipc;
+    aeron_image_os_ipc_t os_ipc;
     auto handler =
         [&](std::int32_t msgTypeId, AtomicBuffer &buffer, util::index_t offset, util::index_t length)
         {
@@ -322,7 +322,7 @@ TEST_F(DriverConductorSpyTest, shouldBeAbleToAddSinglePublicationThenAddSingleSu
 
     size_t response_number = 0;
     int32_t session_id = 0;
-    command::BuffersReadyOsIpcDefn os_ipc;
+    aeron_image_os_ipc_t os_ipc;
     auto handler =
         [&](std::int32_t msgTypeId, AtomicBuffer &buffer, util::index_t offset, util::index_t length)
         {
@@ -384,7 +384,7 @@ TEST_F(DriverConductorSpyTest, shouldBeAbleToAddMultipleSubscriptionWithSameStre
 
     size_t response_number = 0;
     int32_t session_id = 0;
-    command::BuffersReadyOsIpcDefn os_ipc;
+    aeron_image_os_ipc_t os_ipc;
     auto handler =
         [&](std::int32_t msgTypeId, AtomicBuffer &buffer, util::index_t offset, util::index_t length)
         {
@@ -458,8 +458,8 @@ TEST_F(DriverConductorSpyTest, shouldBeAbleToAddSingleSubscriptionThenAddMultipl
     size_t response_number = 0;
     int32_t session_id_1 = 0;
     int32_t session_id_2 = 0;
-    command::BuffersReadyOsIpcDefn os_ipc_1;
-    command::BuffersReadyOsIpcDefn os_ipc_2;
+    aeron_image_os_ipc_t os_ipc_1;
+    aeron_image_os_ipc_t os_ipc_2;
     auto handler =
         [&](std::int32_t msgTypeId, AtomicBuffer &buffer, util::index_t offset, util::index_t length)
         {
@@ -545,7 +545,7 @@ TEST_F(DriverConductorSpyTest, shouldNotLinkSubscriptionOnAddPublicationAfterFir
 
     size_t response_number = 0;
     int32_t session_id = 0;
-    command::BuffersReadyOsIpcDefn os_ipc;
+    aeron_image_os_ipc_t os_ipc;
     auto handler =
         [&](std::int32_t msgTypeId, AtomicBuffer &buffer, util::index_t offset, util::index_t length)
         {
