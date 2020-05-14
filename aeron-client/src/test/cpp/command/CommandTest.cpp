@@ -112,7 +112,6 @@ TEST (commandTests, testPublicationReadyFlyweight)
     osIpc.bufferLength = 1023;
     osIpc.correlationId = 133;
     osIpc.processId = 123;
-    osIpc.padding = 0;
 
     ASSERT_NO_THROW({
         PublicationBuffersReadyFlyweight cmd(ab, BASE_OFFSET);
@@ -150,7 +149,6 @@ TEST (commandTests, testImageBuffersReadyFlyweight)
     osIpc.bufferLength = 1029;
     osIpc.correlationId = 135;
     osIpc.processId = 126;
-    osIpc.padding = 0;
 
     std::string sourceInfoData = "sourceinfodata";
 

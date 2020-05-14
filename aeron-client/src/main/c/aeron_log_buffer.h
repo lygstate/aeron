@@ -21,6 +21,7 @@
 #include "aeron_agent.h"
 #include "aeron_context.h"
 #include "command/aeron_control_protocol.h"
+#include "util/aeron_map_raw_log.h"
 
 typedef struct aeron_log_buffer_stct
 {

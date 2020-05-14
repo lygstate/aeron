@@ -81,8 +81,7 @@ typedef struct aeron_image_os_ipc_command_stct
 {
     uint64_t buffer_length;
     int64_t correlation_id;
-    uint32_t process_id;
-    uint32_t padding;
+    int64_t process_id;
 } aeron_image_os_ipc_command_t;
 
 typedef struct aeron_publication_buffers_ready_stct

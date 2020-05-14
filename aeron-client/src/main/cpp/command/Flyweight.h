@@ -29,8 +29,7 @@ struct BuffersReadyOsIpcDefn
 {
     uint64_t bufferLength;
     int64_t correlationId;
-    uint32_t processId;
-    uint32_t padding;
+    int64_t processId;
 };
 
 #pragma pack(pop)

@@ -204,7 +204,7 @@ int aeron_driver_ensure_dir_is_recreated(aeron_driver_context_t *context)
             aeron_mapped_file_t cnc_mmap = { NULL, 0 };
 
             snprintf(buffer, sizeof(buffer) - 1, "%s/%s", dirname, AERON_CNC_FILE);
-            if (aeron_map_existing_file(&cnc_mmap, buffer) < 0)
+            if (aeron_map_existing_file(&cnc_mmap, buffer, 0, 0, false) < 0)
             {
                 snprintf(buffer, sizeof(buffer) - 1, "INFO: failed to mmap CnC file");
                 log_func(buffer);
@@ -252,7 +252,7 @@ void aeron_driver_fill_cnc_metadata(aeron_driver_context_t *context)
     metadata->error_log_buffer_length = (int32_t)context->error_buffer_length;
     metadata->client_liveness_timeout = (int64_t)context->client_liveness_timeout_ns;
     metadata->start_timestamp = context->epoch_clock();
-    metadata->pid = getpid();
+    metadata->pid = aeron_get_pid();
 
     context->to_driver_buffer = aeron_cnc_to_driver_buffer(metadata);
     context->to_clients_buffer = aeron_cnc_to_clients_buffer(metadata);
