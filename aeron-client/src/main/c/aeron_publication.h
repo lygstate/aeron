@@ -21,6 +21,7 @@
 #include "aeron_agent.h"
 #include "aeron_context.h"
 #include "aeron_client_conductor.h"
+#include "util/aeron_map_raw_log.h"
 
 typedef struct aeron_publication_stct
 {

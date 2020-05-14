@@ -168,8 +168,7 @@ void aeron_client_conductor_on_driver_response(int32_t type_id, uint8_t *buffer,
         {
             aeron_publication_buffers_ready_t *response = (aeron_publication_buffers_ready_t *)buffer;
 
-            if (length < sizeof(aeron_publication_buffers_ready_t) ||
-                length < (sizeof(aeron_publication_buffers_ready_t) + response->log_file_length))
+            if (length < sizeof(aeron_publication_buffers_ready_t))
             {
                 goto malformed_command;
             }
@@ -195,31 +194,23 @@ void aeron_client_conductor_on_driver_response(int32_t type_id, uint8_t *buffer,
         {
             aeron_image_buffers_ready_t *response = (aeron_image_buffers_ready_t *)buffer;
             uint8_t *ptr = buffer + sizeof(aeron_image_buffers_ready_t);
-            int32_t log_file_length, source_identity_length;
-            const char *log_file = (const char *)(ptr + sizeof(int32_t));
             const char *source_identity;
 
-            memcpy(&log_file_length, ptr, sizeof(int32_t));
-
-            if (length < sizeof(aeron_image_buffers_ready_t) + 2 * sizeof(int32_t) ||
-                length < sizeof(aeron_image_buffers_ready_t) + 2 * sizeof(int32_t) + log_file_length)
+            if (length < sizeof(aeron_image_buffers_ready_t))
             {
                 goto malformed_command;
             }
-
-            ptr += sizeof(int32_t) + log_file_length;
-            memcpy(&source_identity_length, ptr, sizeof(int32_t));
 
             if (length <
-                sizeof(aeron_image_buffers_ready_t) + 2 * sizeof(int32_t) + log_file_length + source_identity_length)
+                sizeof(aeron_image_buffers_ready_t) + response->source_identity_length)
             {
                 goto malformed_command;
             }
 
-            source_identity = (const char *)(ptr + sizeof(int32_t));
+            source_identity = (const char *)ptr;
 
             result = aeron_client_conductor_on_available_image(
-                conductor, response, log_file_length, log_file, source_identity_length, source_identity);
+                conductor, response, &response->os_ipc, response->source_identity_length, source_identity);
             break;
         }
 
@@ -1157,14 +1148,14 @@ int aeron_client_conductor_on_error(aeron_client_conductor_t *conductor, aeron_e
 int aeron_client_conductor_get_or_create_log_buffer(
     aeron_client_conductor_t *conductor,
     aeron_log_buffer_t **log_buffer,
-    const char *log_file,
+    aeron_image_os_ipc_command_t *os_ipc_command,
     int64_t original_registration_id,
     bool pre_touch)
 {
     if (NULL == (*log_buffer = aeron_int64_to_ptr_hash_map_get(
         &conductor->log_buffer_by_id_map, original_registration_id)))
     {
-        if (aeron_log_buffer_create(log_buffer, log_file, original_registration_id, pre_touch) < 0)
+        if (aeron_log_buffer_create(log_buffer, os_ipc_command, original_registration_id, pre_touch) < 0)
         {
             return -1;
         }
@@ -1209,20 +1200,13 @@ int aeron_client_conductor_on_publication_ready(
 
         if (response->correlation_id == resource->registration_id)
         {
-            char log_file[AERON_MAX_PATH];
             const char *channel = resource->uri;
             bool is_exclusive = (AERON_CLIENT_TYPE_EXCLUSIVE_PUBLICATION == resource->type) ? true : false;
 
-            memcpy(
-                log_file,
-                (const char *)response + sizeof(aeron_publication_buffers_ready_t),
-                response->log_file_length);
-            log_file[response->log_file_length] = '\0';
-
-            aeron_log_buffer_t *log_buffer;
+            aeron_log_buffer_t *log_buffer = NULL;
 
             if (aeron_client_conductor_get_or_create_log_buffer(
-                conductor, &log_buffer, log_file, response->registration_id, conductor->pre_touch) < 0)
+                conductor, &log_buffer, &response->os_ipc, response->registration_id, conductor->pre_touch) < 0)
             {
                 return -1;
             }
@@ -1420,8 +1404,7 @@ aeron_subscription_t *aeron_client_conductor_find_subscription_by_id(
 int aeron_client_conductor_on_available_image(
     aeron_client_conductor_t *conductor,
     aeron_image_buffers_ready_t *response,
-    int32_t log_file_length,
-    const char *log_file,
+    aeron_image_os_ipc_command_t *os_ipc_command,
     int32_t source_identity_length,
     const char *source_identity)
 {
@@ -1430,17 +1413,15 @@ int aeron_client_conductor_on_available_image(
 
     if (NULL != subscription)
     {
-        char log_file_str[AERON_MAX_PATH], source_identity_str[AERON_MAX_PATH];
+        char source_identity_str[AERON_MAX_PATH];
 
-        memcpy(log_file_str, log_file, log_file_length);
-        log_file_str[log_file_length] = '\0';
         memcpy(source_identity_str, source_identity, source_identity_length);
         source_identity_str[source_identity_length] = '\0';
 
-        aeron_log_buffer_t *log_buffer;
+        aeron_log_buffer_t *log_buffer = NULL;
 
         if (aeron_client_conductor_get_or_create_log_buffer(
-            conductor, &log_buffer, log_file, response->correlation_id, conductor->pre_touch) < 0)
+            conductor, &log_buffer, os_ipc_command, response->correlation_id, conductor->pre_touch) < 0)
         {
             return -1;
         }
