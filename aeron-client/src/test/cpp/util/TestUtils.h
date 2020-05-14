@@ -28,32 +28,6 @@
 
 namespace aeron { namespace test {
 
-std::string makeTempFileName()
-{
-#if !defined(_MSC_VER)
-    char rawname[] = "/tmp/aeron-c.XXXXXXX";
-    int fd = ::mkstemp(rawname);
-    ::close(fd);
-    ::unlink(rawname);
-
-    return std::string(rawname);
-
-#else
-    char tmpdir[MAX_PATH+1];
-    char tmpfile[MAX_PATH];
-
-    if (::GetTempPath(MAX_PATH, &tmpdir[0]) > 0)
-    {
-        if (::GetTempFileName(tmpdir, TEXT("aeron-c"), 0, &tmpfile[0]) != 0)
-        {
-            return std::string(tmpfile);
-        }
-    }
-
-    throw util::IllegalStateException("could not make unique temp filename", SOURCEINFO);
-#endif
-}
-
 inline void throwIllegalArgumentException()
 {
     throw util::IllegalArgumentException("Intentional IllegalArgumentException", SOURCEINFO);

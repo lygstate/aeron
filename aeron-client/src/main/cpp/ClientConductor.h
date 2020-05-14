@@ -146,7 +146,7 @@ public:
         std::int32_t sessionId,
         std::int32_t publicationLimitCounterId,
         std::int32_t channelStatusIndicatorId,
-        const std::string &logFilename);
+        const BuffersReadyOsIpcDefn &osIpc);
 
     void onNewExclusivePublication(
         std::int64_t registrationId,
@@ -155,7 +155,7 @@ public:
         std::int32_t sessionId,
         std::int32_t publicationLimitCounterId,
         std::int32_t channelStatusIndicatorId,
-        const std::string &logFilename);
+        const BuffersReadyOsIpcDefn &osIpc);
 
     void onSubscriptionReady(std::int64_t registrationId, std::int32_t channelStatusId);
 
@@ -171,7 +171,7 @@ public:
         std::int32_t sessionId,
         std::int32_t subscriberPositionId,
         std::int64_t subscriptionRegistrationId,
-        const std::string &logFilename,
+        const BuffersReadyOsIpcDefn &osIpc,
         const std::string &sourceIdentity);
 
     void onUnavailableImage(std::int64_t correlationId, std::int64_t subscriptionRegistrationId);
@@ -524,13 +524,13 @@ private:
     }
 
     inline std::shared_ptr<LogBuffers> getLogBuffers(
-        std::int64_t registrationId, const std::string &logFilename, const std::string &channel)
+        std::int64_t registrationId, const BuffersReadyOsIpcDefn &osIpc, const std::string &channel)
     {
         auto it = m_logBuffersByRegistrationId.find(registrationId);
         if (it == m_logBuffersByRegistrationId.end())
         {
             auto touch = m_preTouchMappedMemory && channel.find(std::string("sparse=true")) == std::string::npos;
-            auto logBuffers = std::make_shared<LogBuffers>(logFilename.c_str(), touch);
+            auto logBuffers = std::make_shared<LogBuffers>(osIpc, touch);
             m_logBuffersByRegistrationId.insert(std::pair<std::int64_t, LogBuffersDefn>(
                 registrationId, LogBuffersDefn(logBuffers)));
 

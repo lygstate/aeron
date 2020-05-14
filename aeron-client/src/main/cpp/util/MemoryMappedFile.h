@@ -16,37 +16,33 @@
 #ifndef AERON_UTIL_MEMORY_MAPPED_FILE_H
 #define AERON_UTIL_MEMORY_MAPPED_FILE_H
 
-#include <cstdint>
 #include <memory>
+#include <cstdint>
 #include "util/Export.h"
+#include <command/Flyweight.h>
 
-#ifdef _WIN32
-    #ifndef NOMINMAX
-        #define NOMINMAX
-    #endif // !NOMINMAX
-    #include <windows.h>
-#else
-    #include <sys/types.h>
-#endif
-
-
+extern "C"
+{
+#include "util/aeron_fileutil.h"
+}
 namespace aeron { namespace util
 {
 
+using namespace aeron::command;
+
+class MemoryMappedFilePrivate;
 class CLIENT_EXPORT MemoryMappedFile
 {
 public:
     typedef std::shared_ptr<MemoryMappedFile> ptr_t;
 
-#ifdef _WIN32
-    static ptr_t createNew(const char* filename, size_t offset, size_t length);
-    static ptr_t mapExisting(const char* filename, size_t offset, size_t length, bool readOnly = false);
-#else
-    static ptr_t createNew(const char* filename, off_t offset, size_t length);
-    static ptr_t mapExisting(const char* filename, off_t offset, size_t length, bool readOnly = false);
-#endif
+    static ptr_t createNew(const BuffersReadyOsIpcDefn &osIpc, uint64_t offset, size_t length);
 
+    static ptr_t mapExisting(const char* filename, uint64_t offset, size_t length, bool readOnly = false);
     static ptr_t mapExisting(const char* filename, bool readOnly = false);
+    static ptr_t mapExisting(const BuffersReadyOsIpcDefn &osIpc);
+
+    static void close(const BuffersReadyOsIpcDefn &osIpc);
 
     inline static ptr_t mapExistingReadOnly(const char* filename)
     {
@@ -65,34 +61,13 @@ public:
     static std::int64_t getFileSize(const char *filename);
 
 private:
-    struct FileHandle
-    {
-#ifdef _WIN32
-        HANDLE handle;
-#else
-        int handle = -1;
-#endif
-    };
 
-#ifdef _WIN32
-    MemoryMappedFile(FileHandle fd, size_t offset, size_t length, bool readOnly);
-#else
-    MemoryMappedFile(FileHandle fd, off_t offset, size_t length, bool readOnly);
-#endif
+    MemoryMappedFile(const aeron_image_os_ipc_mapped_t &os_ipc, const aeron_mapped_file_t &mapped_file);
+    MemoryMappedFile(const char *filename, const aeron_mapped_file_t &mapped_file);
 
-    uint8_t* doMapping(size_t size, FileHandle fd, size_t offset, bool readOnly);
-
-    std::uint8_t* m_memory = 0;
-    size_t m_memorySize = 0;
-    static size_t m_page_size;
-    static bool fill(FileHandle fd, size_t sz, std::uint8_t);
-
-#ifdef _WIN32
-    HANDLE m_file = NULL;
-    HANDLE m_mapping = NULL;
-    void cleanUp();
-#endif
-
+    aeron_mapped_file_t mapped_file;
+    aeron_image_os_ipc_mapped_t os_ipc;
+    std::string filename;
 };
 
 }}

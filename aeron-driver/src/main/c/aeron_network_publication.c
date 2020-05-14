@@ -50,9 +50,6 @@ int aeron_network_publication_create(
     bool spies_simulate_connection,
     aeron_system_counters_t *system_counters)
 {
-    char path[AERON_MAX_PATH];
-    int path_length = aeron_network_publication_location(path, sizeof(path), context->aeron_dir, registration_id);
-
     aeron_network_publication_t *_pub = NULL;
     const uint64_t usable_fs_space = context->usable_fs_space_func(context->aeron_dir);
     const uint64_t log_length = aeron_logbuffer_compute_log_length(params->term_length, context->file_page_size);
@@ -74,39 +71,27 @@ int aeron_network_publication_create(
         return -1;
     }
 
-    _pub->log_file_name = NULL;
-    if (aeron_alloc((void **)(&_pub->log_file_name), (size_t)path_length + 1) < 0)
-    {
-        aeron_free(_pub);
-        aeron_set_err(ENOMEM, "%s", "Could not allocate network publication log_file_name");
-        return -1;
-    }
-
     if (aeron_retransmit_handler_init(
         &_pub->retransmit_handler,
         aeron_system_counter_addr(system_counters, AERON_SYSTEM_COUNTER_INVALID_PACKETS),
         context->retransmit_unicast_delay_ns,
         context->retransmit_unicast_linger_ns) < 0)
     {
-        aeron_free(_pub->log_file_name);
         aeron_free(_pub);
         aeron_set_err(aeron_errcode(), "Could not init network publication retransmit handler: %s", aeron_errmsg());
         return -1;
     }
 
+    aeron_os_ipc_location(&_pub->os_ipc, registration_id);
     if (context->map_raw_log_func(
-        &_pub->mapped_raw_log, path, params->is_sparse, params->term_length, context->file_page_size) < 0)
+        &_pub->mapped_raw_log, &_pub->os_ipc, params->is_sparse, params->term_length, context->file_page_size) < 0)
     {
-        aeron_free(_pub->log_file_name);
+        aeron_set_err(aeron_errcode(), "error mapping network raw log buffer id:%"PRIi64 " error:%s", _pub->os_ipc.command.buffer_id, aeron_errmsg());
         aeron_free(_pub);
-        aeron_set_err(aeron_errcode(), "error mapping network raw log %s: %s", path, aeron_errmsg());
         return -1;
     }
     _pub->map_raw_log_close_func = context->map_raw_log_close_func;
 
-    strncpy(_pub->log_file_name, path, (size_t)path_length);
-    _pub->log_file_name[path_length] = '\0';
-    _pub->log_file_name_length = (size_t)path_length;
     _pub->log_meta_data = (aeron_logbuffer_metadata_t *)(_pub->mapped_raw_log.log_meta_data.addr);
 
     if (params->has_position)
@@ -245,9 +230,8 @@ void aeron_network_publication_close(
         publication->conductor_fields.managed_resource.clientd = NULL;
 
         aeron_retransmit_handler_close(&publication->retransmit_handler);
-        publication->map_raw_log_close_func(&publication->mapped_raw_log, publication->log_file_name);
+        publication->map_raw_log_close_func(&publication->mapped_raw_log, &publication->os_ipc);
         publication->flow_control->fini(publication->flow_control);
-        aeron_free(publication->log_file_name);
     }
 
     aeron_free(publication);
@@ -833,8 +817,7 @@ void aeron_network_publication_check_untethered_subscriptions(
                             publication->conductor_fields.managed_resource.registration_id,
                             publication->stream_id,
                             publication->session_id,
-                            publication->log_file_name,
-                            publication->log_file_name_length,
+                            &publication->os_ipc,
                             tetherable_position->counter_id,
                             tetherable_position->subscription_registration_id,
                             AERON_IPC_CHANNEL,
