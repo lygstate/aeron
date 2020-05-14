@@ -25,6 +25,12 @@
 #include <CncFileDescriptor.h>
 #include <iostream>
 
+#include "aeron_common.h"
+extern "C"
+{
+#include "util/aeron_fileutil.h"
+}
+
 namespace aeron
 {
 
@@ -417,60 +423,14 @@ public:
     static void requestDriverTermination(
         const std::string &directory, const std::uint8_t *tokenBuffer, std::size_t tokenLength);
 
-    inline static std::string tmpDir()
-    {
-#if defined(_MSC_VER)
-        static char buff[MAX_PATH+1];
-        std::string dir = "";
 
-        if (::GetTempPath(MAX_PATH, &buff[0]) > 0)
-        {
-            dir = buff;
-        }
 
-        return dir;
-#else
-        std::string dir = "/tmp";
-
-        if (::getenv("TMPDIR"))
-        {
-            dir = ::getenv("TMPDIR");
-        }
-
-        return dir;
-#endif
-    }
-
-    inline static std::string getUserName()
-    {
-        const char *username = ::getenv("USER");
-#if (_MSC_VER)
-        if (nullptr == username)
-        {
-            username = ::getenv("USERNAME");
-            if (nullptr == username)
-            {
-                 username = "default";
-            }
-        }
-#else
-        if (nullptr == username)
-        {
-            username = "default";
-        }
-#endif
-        return username;
-    }
 
     inline static std::string defaultAeronPath()
     {
-#if defined(__linux__)
-        return "/dev/shm/aeron-" + getUserName();
-#elif (_MSC_VER)
-        return tmpDir() + "aeron-" + getUserName();
-#else
-        return tmpDir() + "/aeron-" + getUserName();
-#endif
+        char aeronDir[AERON_MAX_PATH];
+        aeron_default_dir(aeronDir, AERON_MAX_PATH - 1);
+        return aeronDir;
     }
 
 private:

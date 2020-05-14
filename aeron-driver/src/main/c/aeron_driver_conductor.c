@@ -589,21 +589,17 @@ void aeron_driver_conductor_on_available_image(
     int64_t correlation_id,
     int32_t stream_id,
     int32_t session_id,
-    const char *log_file_name,
-    size_t log_file_name_length,
+    aeron_image_os_ipc_mapped_t *os_ipc,
     int32_t subscriber_position_id,
     int64_t subscriber_registration_id,
     const char *source_identity,
     size_t source_identity_length)
 {
-    char response_buffer[sizeof(aeron_image_buffers_ready_t) + (2 * AERON_MAX_PATH)];
+    char response_buffer[sizeof(aeron_image_buffers_ready_t) + AERON_MAX_PATH + sizeof(int32_t)];
     char *ptr = response_buffer;
     aeron_image_buffers_ready_t *response;
-    size_t response_length =
-        sizeof(aeron_image_buffers_ready_t) +
-        AERON_ALIGN(log_file_name_length, sizeof(int32_t)) +
-        source_identity_length +
-        (2 * sizeof(int32_t));
+    size_t response_length_raw = sizeof(aeron_image_buffers_ready_t) + source_identity_length;
+    size_t response_length = AERON_ALIGN(response_length_raw, sizeof(int32_t));
 
     response = (aeron_image_buffers_ready_t *)ptr;
 
@@ -612,19 +608,9 @@ void aeron_driver_conductor_on_available_image(
     response->session_id = session_id;
     response->subscriber_position_id = subscriber_position_id;
     response->subscriber_registration_id = subscriber_registration_id;
+    response->os_ipc = os_ipc->command;
+    response->source_identity_length = (int32_t)source_identity_length;
     ptr += sizeof(aeron_image_buffers_ready_t);
-
-    int32_t length_field;
-
-    length_field = (int32_t)log_file_name_length;
-    memcpy(ptr, &length_field, sizeof(length_field));
-    ptr += sizeof(int32_t);
-    memcpy(ptr, log_file_name, log_file_name_length);
-    ptr += AERON_ALIGN(log_file_name_length, sizeof(int32_t));
-
-    length_field = (int32_t)source_identity_length;
-    memcpy(ptr, &length_field, sizeof(length_field));
-    ptr += sizeof(int32_t);
     memcpy(ptr, source_identity, source_identity_length);
 
     aeron_driver_conductor_client_transmit(conductor, AERON_RESPONSE_ON_AVAILABLE_IMAGE, response, response_length);
@@ -1491,10 +1477,9 @@ void aeron_driver_conductor_on_publication_ready(
     int32_t position_limit_counter_id,
     int32_t channel_status_indicator_id,
     bool is_exclusive,
-    const char *log_file_name,
-    size_t log_file_name_length)
+    aeron_image_os_ipc_mapped_t *os_ipc)
 {
-    char response_buffer[sizeof(aeron_publication_buffers_ready_t) + AERON_MAX_PATH];
+    char response_buffer[sizeof(aeron_publication_buffers_ready_t)];
     aeron_publication_buffers_ready_t *response = (aeron_publication_buffers_ready_t *)response_buffer;
 
     response->correlation_id = registration_id;
@@ -1503,14 +1488,13 @@ void aeron_driver_conductor_on_publication_ready(
     response->session_id = session_id;
     response->position_limit_counter_id = position_limit_counter_id;
     response->channel_status_indicator_id = channel_status_indicator_id;
-    response->log_file_length = (int32_t)log_file_name_length;
-    memcpy(response_buffer + sizeof(aeron_publication_buffers_ready_t), log_file_name, log_file_name_length);
+    response->os_ipc = os_ipc->command;
 
     aeron_driver_conductor_client_transmit(
         conductor,
         is_exclusive ? AERON_RESPONSE_ON_EXCLUSIVE_PUBLICATION_READY : AERON_RESPONSE_ON_PUBLICATION_READY,
         response,
-        sizeof(aeron_publication_buffers_ready_t) + log_file_name_length);
+        sizeof(aeron_publication_buffers_ready_t));
 }
 
 void aeron_driver_conductor_on_subscription_ready(
@@ -2090,8 +2074,7 @@ int aeron_driver_conductor_link_subscribable(
     int64_t now_ns,
     size_t source_identity_length,
     const char *source_identity,
-    size_t log_file_name_length,
-    const char *log_file_name)
+    aeron_image_os_ipc_mapped_t *os_ipc)
 {
     int ensure_capacity_result = 0, result = -1;
 
@@ -2128,8 +2111,7 @@ int aeron_driver_conductor_link_subscribable(
                     original_registration_id,
                     stream_id,
                     session_id,
-                    log_file_name,
-                    log_file_name_length,
+                    os_ipc,
                     counter_id,
                     link->registration_id,
                     source_identity,
@@ -2209,8 +2191,7 @@ int aeron_driver_conductor_on_add_ipc_publication(
         publication->pub_lmt_position.counter_id,
         AERON_CHANNEL_STATUS_INDICATOR_NOT_ALLOCATED,
         is_exclusive,
-        publication->log_file_name,
-        publication->log_file_name_length);
+        &publication->os_ipc);
 
     int64_t now_ns = aeron_clock_cached_nano_time(conductor->context->cached_clock);
 
@@ -2232,8 +2213,7 @@ int aeron_driver_conductor_on_add_ipc_publication(
                 now_ns,
                 AERON_IPC_CHANNEL_LEN,
                 AERON_IPC_CHANNEL,
-                publication->log_file_name_length,
-                publication->log_file_name) < 0)
+                &publication->os_ipc) < 0)
             {
                 goto error_cleanup;
             }
@@ -2324,8 +2304,7 @@ int aeron_driver_conductor_on_add_network_publication(
         publication->pub_lmt_position.counter_id,
         endpoint->channel_status.counter_id,
         is_exclusive,
-        publication->log_file_name,
-        publication->log_file_name_length);
+        &publication->os_ipc);
 
     int64_t now_ns = aeron_clock_cached_nano_time(conductor->context->cached_clock);
 
@@ -2355,8 +2334,7 @@ int aeron_driver_conductor_on_add_network_publication(
                 now_ns,
                 AERON_IPC_CHANNEL_LEN,
                 AERON_IPC_CHANNEL,
-                publication->log_file_name_length,
-                publication->log_file_name) < 0)
+                &publication->os_ipc) < 0)
             {
                 return -1;
             }
@@ -2467,8 +2445,7 @@ int aeron_driver_conductor_on_add_ipc_subscription(
                 now_ns,
                 AERON_IPC_CHANNEL_LEN,
                 AERON_IPC_CHANNEL,
-                publication->log_file_name_length,
-                publication->log_file_name) < 0)
+                &publication->os_ipc) < 0)
             {
                 goto error_cleanup;
             }
@@ -2557,8 +2534,7 @@ int aeron_driver_conductor_on_add_spy_subscription(
                 now_ns,
                 AERON_IPC_CHANNEL_LEN,
                 AERON_IPC_CHANNEL,
-                publication->log_file_name_length,
-                publication->log_file_name) < 0)
+                &publication->os_ipc) < 0)
             {
                 return -1;
             }
@@ -2684,8 +2660,7 @@ int aeron_driver_conductor_on_add_network_subscription(
                     now_ns,
                     source_identity_length,
                     source_identity,
-                    image->log_file_name_length,
-                    image->log_file_name) < 0)
+                    &image->os_ipc) < 0)
                 {
                     return -1;
                 }
@@ -3307,8 +3282,7 @@ void aeron_driver_conductor_on_create_publication_image(void *clientd, void *ite
             now_ns,
             source_identity_length,
             source_identity,
-            image->log_file_name_length,
-            image->log_file_name) < 0)
+            &image->os_ipc) < 0)
         {
             return;
         }
@@ -3462,8 +3436,7 @@ extern void aeron_driver_conductor_on_available_image(
     int64_t correlation_id,
     int32_t stream_id,
     int32_t session_id,
-    const char *log_file_name,
-    size_t log_file_name_length,
+    aeron_image_os_ipc_mapped_t *os_ipc,
     int32_t subscriber_position_id,
     int64_t subscriber_registration_id,
     const char *source_identity,

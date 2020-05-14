@@ -63,7 +63,7 @@ TEST_F(DriverConductorNetworkTest, shouldBeAbleToAddSingleNetworkPublication)
 
             EXPECT_EQ(response.streamId(), STREAM_ID_1);
             EXPECT_EQ(response.correlationId(), pub_id);
-            EXPECT_GT(response.logFileName().length(), 0u);
+            EXPECT_GT(response.osIpc().bufferLength, 0u);
         };
 
     EXPECT_EQ(readAllBroadcastsFromConductor(handler), 1u);
@@ -400,7 +400,7 @@ TEST_F(DriverConductorNetworkTest, shouldBeAbleToAddSingleNetworkPublicationWith
             EXPECT_EQ(response.streamId(), STREAM_ID_1);
             EXPECT_EQ(response.sessionId(), SESSION_ID_1);
             EXPECT_EQ(response.correlationId(), pub_id);
-            EXPECT_GT(response.logFileName().length(), 0u);
+            EXPECT_GT(response.osIpc().bufferLength, 0u);
         };
 
     EXPECT_EQ(readAllBroadcastsFromConductor(handler), 1u);
@@ -573,7 +573,7 @@ TEST_F(DriverConductorNetworkTest, shouldBeAbleToAddSingleNetworkPublicationThat
             EXPECT_EQ(response.streamId(), STREAM_ID_1);
             EXPECT_NE(response.sessionId(), next_session_id);
             EXPECT_EQ(response.correlationId(), pub_id);
-            EXPECT_GT(response.logFileName().length(), 0u);
+            EXPECT_GT(response.osIpc().bufferLength, 0u);
         };
 
     EXPECT_EQ(readAllBroadcastsFromConductor(handler), 1u);
@@ -1064,7 +1064,7 @@ TEST_F(DriverConductorNetworkTest, shouldCreatePublicationImageForActiveNetworkS
             EXPECT_EQ(response.correlationId(), aeron_publication_image_registration_id(image));
             EXPECT_EQ(response.subscriptionRegistrationId(), sub_id);
 
-            EXPECT_EQ(std::string(aeron_publication_image_log_file_name(image)), response.logFileName());
+            EXPECT_EQ(*(command::BuffersReadyOsIpcDefn*)&(image->os_ipc), response.osIpc());
             EXPECT_EQ(SOURCE_IDENTITY, response.sourceIdentity());
         };
 
@@ -1244,7 +1244,7 @@ TEST_F(DriverConductorNetworkTest, shouldSendAvailableImageForMultipleSubscripti
             EXPECT_TRUE(
                 response.subscriptionRegistrationId() == sub_id_1 ||
                 response.subscriptionRegistrationId() == sub_id_2);
-            EXPECT_EQ(std::string(aeron_publication_image_log_file_name(image)), response.logFileName());
+            EXPECT_EQ(*(command::BuffersReadyOsIpcDefn*)&(image->os_ipc), response.osIpc());
             EXPECT_EQ(SOURCE_IDENTITY, response.sourceIdentity());
         };
 
@@ -1295,7 +1295,7 @@ TEST_F(DriverConductorNetworkTest, shouldSendAvailableImageForSecondSubscription
                 EXPECT_EQ(response.streamId(), STREAM_ID_1);
                 EXPECT_EQ(response.correlationId(), aeron_publication_image_registration_id(image));
                 EXPECT_EQ(response.subscriptionRegistrationId(), sub_id_1);
-                EXPECT_EQ(std::string(aeron_publication_image_log_file_name(image)), response.logFileName());
+                EXPECT_EQ(*(command::BuffersReadyOsIpcDefn*)&(image->os_ipc), response.osIpc());
                 EXPECT_EQ(SOURCE_IDENTITY, response.sourceIdentity());
             }
             else if (2 == response_number)
@@ -1316,7 +1316,7 @@ TEST_F(DriverConductorNetworkTest, shouldSendAvailableImageForSecondSubscription
                 EXPECT_EQ(response.streamId(), STREAM_ID_1);
                 EXPECT_EQ(response.correlationId(), aeron_publication_image_registration_id(image));
                 EXPECT_EQ(response.subscriptionRegistrationId(), sub_id_2);
-                EXPECT_EQ(std::string(aeron_publication_image_log_file_name(image)), response.logFileName());
+                EXPECT_EQ(*(command::BuffersReadyOsIpcDefn*)&(image->os_ipc), response.osIpc());
                 EXPECT_EQ(SOURCE_IDENTITY, response.sourceIdentity());
             }
 
