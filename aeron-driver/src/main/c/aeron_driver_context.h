@@ -78,6 +78,7 @@ typedef struct aeron_driver_context_stct
     bool reliable_stream;                                   /* aeron.reliable.stream = true */
     bool tether_subscriptions;                              /* aeron.tether.subscriptions = true */
     bool rejoin_stream;                                     /* aeron.rejoin.stream = true */
+    bool anonymous_file_mapping;                            /* aeron.anonymous.file.mapping = true */
     bool ats_enabled;
     uint64_t driver_timeout_ms;                             /* aeron.driver.timeout = 10s */
     uint64_t client_liveness_timeout_ns;                    /* aeron.client.liveness.timeout = 5s */
