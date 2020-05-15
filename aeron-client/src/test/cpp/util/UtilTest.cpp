@@ -113,9 +113,9 @@ void throwIllegalArgumentException()
 TEST(utilTests, sourcedException)
 {
 #if defined(_MSC_VER)
-    const std::string aeron_client_dir = " aeron-client\\";
+    const std::string aeron_client_dir = "aeron-client\\";
 #else
-    const std::string aeron_client_dir = " aeron-client/";
+    const std::string aeron_client_dir = "aeron-client/";
 #endif
 
 #if defined(_MSC_VER) && defined(MSVC_FILE_IS_LOWER_CASE)
