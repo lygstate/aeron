@@ -640,6 +640,11 @@ aeron_inferable_boolean_t aeron_driver_context_get_receiver_group_consideration(
 int aeron_driver_context_set_rejoin_stream(aeron_driver_context_t *context, bool value);
 bool aeron_driver_context_get_rejoin_stream(aeron_driver_context_t *context);
 
+#define AERON_ANONYMOUS_FILE_MAPPING_ENV_VAR "AERON_ANONYMOUS_FILE_MAPPING"
+
+int aeron_driver_context_set_anonymous_file_mapping(aeron_driver_context_t *context, bool value);
+bool aeron_driver_context_get_anonymous_file_mapping(aeron_driver_context_t *context);
+
 #define AERON_IPC_CHANNEL "aeron:ipc"
 #define AERON_IPC_CHANNEL_LEN strlen(AERON_IPC_CHANNEL)
 #define AERON_SPY_PREFIX "aeron-spy:"
