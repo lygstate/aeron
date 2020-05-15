@@ -389,6 +389,7 @@ static void aeron_driver_conductor_to_client_interceptor_null(
 #define AERON_UDP_CHANNEL_TRANSPORT_BINDINGS_INTERCEPTORS_DEFAULT ("")
 #define AERON_RECEIVER_GROUP_CONSIDERATION_DEFAULT (AERON_INFER)
 #define AERON_REJOIN_STREAM_DEFAULT (true)
+#define AERON_ANONYMOUS_FILE_MAPPING_DEFAULT (true)
 #define AERON_PUBLICATION_RESERVED_SESSION_ID_LOW_DEFAULT (-1)
 #define AERON_PUBLICATION_RESERVED_SESSION_ID_HIGH_DEFAULT (10000)
 #define AERON_DRIVER_RERESOLUTION_CHECK_INTERVAL_NS_DEFAULT (1 * 1000 * 1000 * 1000LL)
@@ -496,6 +497,7 @@ int aeron_driver_context_init(aeron_driver_context_t **context)
     _context->reliable_stream = AERON_RELIABLE_STREAM_DEFAULT;
     _context->tether_subscriptions = AERON_TETHER_SUBSCRIPTIONS_DEFAULT;
     _context->rejoin_stream = AERON_REJOIN_STREAM_DEFAULT;
+    _context->anonymous_file_mapping = AERON_ANONYMOUS_FILE_MAPPING_DEFAULT;
     _context->driver_timeout_ms = AERON_DRIVER_TIMEOUT_MS_DEFAULT;
     _context->to_driver_buffer_length = AERON_TO_CONDUCTOR_BUFFER_LENGTH_DEFAULT;
     _context->to_clients_buffer_length = AERON_TO_CLIENTS_BUFFER_LENGTH_DEFAULT;
@@ -633,6 +635,10 @@ int aeron_driver_context_init(aeron_driver_context_t **context)
     _context->rejoin_stream = aeron_config_parse_bool(
         getenv(AERON_REJOIN_STREAM_ENV_VAR),
         _context->rejoin_stream);
+
+    _context->anonymous_file_mapping = aeron_config_parse_bool(
+        getenv(AERON_ANONYMOUS_FILE_MAPPING_ENV_VAR),
+        _context->anonymous_file_mapping);
 
     _context->to_driver_buffer_length = aeron_config_parse_size64(
         AERON_TO_CONDUCTOR_BUFFER_LENGTH_ENV_VAR,
@@ -2310,6 +2316,19 @@ int32_t aeron_driver_context_get_publication_reserved_session_id_high(aeron_driv
 bool aeron_driver_context_get_rejoin_stream(aeron_driver_context_t *context)
 {
     return NULL != context ? context->rejoin_stream : AERON_REJOIN_STREAM_DEFAULT;
+}
+
+int aeron_driver_context_set_anonymous_file_mapping(aeron_driver_context_t *context, bool value)
+{
+    AERON_DRIVER_CONTEXT_SET_CHECK_ARG_AND_RETURN(-1, context);
+
+    context->anonymous_file_mapping = value;
+    return 0;
+}
+
+bool aeron_driver_context_get_anonymous_file_mapping(aeron_driver_context_t *context)
+{
+    return NULL != context ? context->anonymous_file_mapping : AERON_ANONYMOUS_FILE_MAPPING_DEFAULT;
 }
 
 int aeron_driver_context_set_resolver_name(aeron_driver_context_t *context, const char *value)

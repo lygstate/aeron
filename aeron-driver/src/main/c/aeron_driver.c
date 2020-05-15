@@ -440,6 +440,7 @@ void aeron_driver_context_print_configuration(aeron_driver_context_t *context)
     fprintf(fpout, "\n    reliable_stream=%d", context->reliable_stream);
     fprintf(fpout, "\n    tether_subscriptions=%d", context->tether_subscriptions);
     fprintf(fpout, "\n    rejoin_stream=%d", context->rejoin_stream);
+    fprintf(fpout, "\n    anonymous_file_mapping=%d", context->anonymous_file_mapping);
     fprintf(fpout, "\n    receiver_group_consideration=%d", context->receiver_group_consideration);
     fprintf(fpout, "\n    to_driver_buffer_length=%" PRIu64, (uint64_t)context->to_driver_buffer_length);
     fprintf(fpout, "\n    to_clients_buffer_length=%" PRIu64, (uint64_t)context->to_clients_buffer_length);
