@@ -16,22 +16,125 @@
 #ifndef AERON_CONCURRENT_ATOMIC64_H
 #define AERON_CONCURRENT_ATOMIC64_H
 
-#include <util/Platform.h>
-
 #include <cstdint>
+#include <util/Platform.h>
+#include <concurrent/aeron_atomic.h>
+#include <concurrent/aeron_thread.h>
 
-#if defined(AERON_COMPILER_GCC)
-    #if defined(AERON_CPU_X64)
-        #include <concurrent/atomic/Atomic64_gcc_x86_64.h>
-    #else
-        #include <concurrent/atomic/Atomic64_gcc_cpp11.h>
-    #endif
-#elif defined(AERON_COMPILER_MSVC) && defined(AERON_CPU_X64)
-    #include <concurrent/atomic/Atomic64_msvc.h>
+namespace aeron { namespace concurrent { namespace atomic {
 
-#else
-    #error Unsupported platform!
-#endif
+/**
+* A compiler directive not reorder instructions.
+*/
+inline void thread_fence()
+{
+    turf_threadFenceAcquire();
+    turf_threadFenceRelease();
+}
+
+/**
+* Fence operation that uses locked addl as mfence is sometimes expensive
+*/
+inline void fence()
+{
+    turf_threadFenceSeqCst();
+}
+
+inline void acquire()
+{
+    turf_threadFenceAcquire();
+}
+
+inline void release()
+{
+    turf_threadFenceRelease();
+}
+
+/**
+* A more jitter friendly alternate to thread:yield in spin waits.
+*/
+inline void cpu_pause()
+{
+    proc_yield();
+}
+
+/**
+* Returns a 32 bit integer with volatile semantics.
+* On x64 MOV is a SC Atomic a operation.
+*/
+inline std::int32_t getInt32Volatile(volatile std::int32_t* source)
+{
+    int32_t sequence = *reinterpret_cast<volatile std::int32_t *>(source);
+    acquire();
+    return sequence;
+}
+
+/**
+* Put a 32 bit int with ordered semantics
+*/
+inline void putInt32Ordered(volatile std::int32_t* source, std::int32_t value)
+{
+    release();
+    *reinterpret_cast<volatile std::int32_t *>(source) = value;
+}
+
+/**
+* Put a 32 bit int with atomic semantics.
+**/
+inline void putInt32Atomic(volatile std::int32_t*  address, std::int32_t value)
+{
+    turf_exchange32Relaxed((turf_atomic32_t*)address, value);
+}
+
+/**
+* Returns a 64 bit integer with volatile semantics.
+* On x64 MOV is a SC Atomic a operation.
+*/
+inline std::int64_t getInt64Volatile(volatile std::int64_t* source)
+{
+    int64_t sequence = *reinterpret_cast<volatile std::int64_t *>(source);
+    acquire();
+    return sequence;
+}
+
+/**
+* Put a 64 bit int with ordered semantics.
+*/
+inline void  putInt64Ordered(volatile std::int64_t*  address, std::int64_t value)
+{
+    release();
+    *reinterpret_cast<volatile std::int64_t *>(address) = value;
+}
+
+/**
+* Put a 64 bit int with atomic semantics.
+**/
+inline void putInt64Atomic(volatile std::int64_t*  address, std::int64_t value)
+{
+    turf_exchange64Relaxed((turf_atomic64_t*)address, value);
+}
+
+inline std::int64_t getAndAddInt64(volatile std::int64_t* address, std::int64_t value)
+{
+    return turf_fetchAdd64Relaxed((turf_atomic64_t*)address, value);
+}
+
+inline std::int32_t getAndAddInt32(volatile std::int32_t* address, std::int32_t value)
+{
+    return turf_fetchAdd32Relaxed((turf_atomic32_t *)address, value);
+}
+
+inline std::int32_t cmpxchg(volatile std::int32_t* destination, std::int32_t expected, std::int32_t desired)
+{
+    return turf_compareExchange32Relaxed((turf_atomic32_t*)destination, expected, desired);
+}
+
+inline std::int64_t cmpxchg(volatile std::int64_t* destination,  std::int64_t expected, std::int64_t desired)
+{
+    return turf_compareExchange64Relaxed((turf_atomic64_t*)destination, expected, desired);
+}
+
+}}}
 
 /**
  * Set of Operations to support atomic operations in C++ that are
