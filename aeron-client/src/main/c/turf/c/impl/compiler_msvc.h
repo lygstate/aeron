@@ -43,7 +43,7 @@
 #define TURF_DEBUG_BREAK() __debugbreak()
 
 TURF_C_INLINE void turf_yieldHWThread() {
-    YieldProcessor();
+    _mm_pause();
 }
 
 #endif // TURF_C_IMPL_COMPILER_MSVC_H

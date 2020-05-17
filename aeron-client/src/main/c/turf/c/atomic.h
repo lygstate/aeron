@@ -428,4 +428,101 @@ TURF_C_INLINE uint64_t turf_fetchOr64(turf_atomic64_t* object, uint64_t operand,
 } // extern "C"
 #endif
 
+
+#ifdef TUR_C_ATOMIC_EXPOSE_EXTERN
+//--------------------------------------------------------------
+//  Wrappers for 8-bit operations with built-in ordering constraints
+//--------------------------------------------------------------
+extern uint8_t turf_load8(const turf_atomic8_t* object, turf_memoryOrder_t memoryOrder);
+extern void turf_store8(turf_atomic8_t* object, uint8_t desired, turf_memoryOrder_t memoryOrder);
+extern uint8_t turf_compareExchange8(turf_atomic8_t* object, uint8_t expected, uint8_t desired, turf_memoryOrder_t memoryOrder);
+extern intreg_t turf_compareExchangeWeak8(turf_atomic8_t* object, uint8_t* expected, uint8_t desired, int success, int failure);
+extern uint8_t turf_exchange8(turf_atomic8_t* object, uint8_t desired, turf_memoryOrder_t memoryOrder);
+extern uint8_t turf_fetchAdd8(turf_atomic8_t* object, int8_t operand, turf_memoryOrder_t memoryOrder);
+extern uint8_t turf_fetchAnd8(turf_atomic8_t* object, uint8_t operand, turf_memoryOrder_t memoryOrder);
+extern uint8_t turf_fetchOr8(turf_atomic8_t* object, uint8_t operand, turf_memoryOrder_t memoryOrder);
+//--------------------------------------------------------------
+//  Wrappers for 16-bit operations with built-in ordering constraints
+//--------------------------------------------------------------
+extern uint16_t turf_load16(const turf_atomic16_t* object, turf_memoryOrder_t memoryOrder);
+extern void turf_store16(turf_atomic16_t* object, uint16_t desired, turf_memoryOrder_t memoryOrder);
+extern uint16_t turf_compareExchange16(turf_atomic16_t* object, uint16_t expected, uint16_t desired, turf_memoryOrder_t memoryOrder);
+extern intreg_t turf_compareExchangeWeak16(turf_atomic16_t* object, uint16_t* expected, uint16_t desired, int success, int failure);
+extern uint16_t turf_exchange16(turf_atomic16_t* object, uint16_t desired, turf_memoryOrder_t memoryOrder);
+extern uint16_t turf_fetchAdd16(turf_atomic16_t* object, int16_t operand, turf_memoryOrder_t memoryOrder);
+extern uint16_t turf_fetchAnd16(turf_atomic16_t* object, uint16_t operand, turf_memoryOrder_t memoryOrder);
+extern uint16_t turf_fetchOr16(turf_atomic16_t* object, uint16_t operand, turf_memoryOrder_t memoryOrder);
+
+//--------------------------------------------------------------
+//  Wrappers for 32-bit operations with built-in ordering constraints
+//--------------------------------------------------------------
+extern uint32_t turf_load32(const turf_atomic32_t* object, turf_memoryOrder_t memoryOrder);
+extern void turf_store32(turf_atomic32_t* object, uint32_t desired, turf_memoryOrder_t memoryOrder);
+extern uint32_t turf_compareExchange32(turf_atomic32_t* object, uint32_t expected, uint32_t desired, turf_memoryOrder_t memoryOrder);
+extern intreg_t turf_compareExchangeWeak32(turf_atomic32_t* object, uint32_t* expected, uint32_t desired, int success, int failure);
+extern uint32_t turf_exchange32(turf_atomic32_t* object, uint32_t desired, turf_memoryOrder_t memoryOrder);
+extern uint32_t turf_fetchAdd32(turf_atomic32_t* object, int32_t operand, turf_memoryOrder_t memoryOrder);
+extern uint32_t turf_fetchAnd32(turf_atomic32_t* object, uint32_t operand, turf_memoryOrder_t memoryOrder);
+extern uint32_t turf_fetchOr32(turf_atomic32_t* object, uint32_t operand, turf_memoryOrder_t memoryOrder);
+//--------------------------------------------------------------
+//  Wrappers for 64-bit operations with built-in ordering constraints
+//--------------------------------------------------------------
+extern uint64_t turf_load64(const turf_atomic64_t* object, turf_memoryOrder_t memoryOrder);
+extern void turf_store64(turf_atomic64_t* object, uint64_t desired, turf_memoryOrder_t memoryOrder);
+extern uint64_t turf_compareExchange64(turf_atomic64_t* object, uint64_t expected, uint64_t desired, turf_memoryOrder_t memoryOrder);
+extern intreg_t turf_compareExchangeWeak64(turf_atomic64_t* object, uint64_t* expected, uint64_t desired, int success, int failure);
+extern uint64_t turf_exchange64(turf_atomic64_t* object, uint64_t desired, turf_memoryOrder_t memoryOrder);
+extern uint64_t turf_fetchAdd64(turf_atomic64_t* object, int64_t operand, turf_memoryOrder_t memoryOrder);
+extern uint64_t turf_fetchAnd64(turf_atomic64_t* object, uint64_t operand, turf_memoryOrder_t memoryOrder);
+extern uint64_t turf_fetchOr64(turf_atomic64_t* object, uint64_t operand, turf_memoryOrder_t memoryOrder);
+
+//----------------------------------------------
+//  8-bit atomic operations
+//----------------------------------------------
+extern  uint8_t turf_load8Relaxed(const turf_atomic8_t* object);
+extern  void turf_store8Relaxed(turf_atomic8_t* object, uint8_t value);
+extern  uint8_t turf_compareExchange8Relaxed(turf_atomic8_t* object, uint8_t expected, uint8_t desired);
+extern  intreg_t turf_compareExchangeWeak8Relaxed(turf_atomic8_t* object, uint8_t* expected, uint8_t desired);
+extern  uint8_t turf_exchange8Relaxed(turf_atomic8_t* object, uint8_t desired);
+extern  uint8_t turf_fetchAdd8Relaxed(turf_atomic8_t* object, int8_t operand);
+extern  uint8_t turf_fetchAnd8Relaxed(turf_atomic8_t* object, uint8_t operand);
+extern  uint8_t turf_fetchOr8Relaxed(turf_atomic8_t* object, uint8_t operand);
+
+//----------------------------------------------
+//  16-bit atomic operations
+//----------------------------------------------
+extern  uint16_t turf_load16Relaxed(const turf_atomic16_t* object);
+extern  void turf_store16Relaxed(turf_atomic16_t* object, uint16_t value);
+extern  uint16_t turf_compareExchange16Relaxed(turf_atomic16_t* object, uint16_t expected, uint16_t desired);
+extern  intreg_t turf_compareExchangeWeak16Relaxed(turf_atomic16_t* object, uint16_t* expected, uint16_t desired);
+extern  uint16_t turf_exchange16Relaxed(turf_atomic16_t* object, uint16_t desired);
+extern  uint16_t turf_fetchAdd16Relaxed(turf_atomic16_t* object, int16_t operand);
+extern  uint16_t turf_fetchAnd16Relaxed(turf_atomic16_t* object, uint16_t operand);
+extern  uint16_t turf_fetchOr16Relaxed(turf_atomic16_t* object, uint16_t operand);
+
+//----------------------------------------------
+//  32-bit atomic operations
+//----------------------------------------------
+extern  uint32_t turf_load32Relaxed(const turf_atomic32_t* object);
+extern  void turf_store32Relaxed(turf_atomic32_t* object, uint32_t value);
+extern  uint32_t turf_compareExchange32Relaxed(turf_atomic32_t* object, uint32_t expected, uint32_t desired);
+extern  intreg_t turf_compareExchangeWeak32Relaxed(turf_atomic32_t* object, uint32_t* expected, uint32_t desired);
+extern  uint32_t turf_exchange32Relaxed(turf_atomic32_t* object, uint32_t desired);
+extern  uint32_t turf_fetchAdd32Relaxed(turf_atomic32_t* object, int32_t operand);
+extern  uint32_t turf_fetchAnd32Relaxed(turf_atomic32_t* object, uint32_t operand);
+extern  uint32_t turf_fetchOr32Relaxed(turf_atomic32_t* object, uint32_t operand);
+
+//----------------------------------------------
+//  64-bit atomic operations
+//----------------------------------------------
+extern  uint64_t turf_load64Relaxed(const turf_atomic64_t* object);
+extern  void turf_store64Relaxed(turf_atomic64_t* object, uint64_t value);
+extern  uint64_t turf_compareExchange64Relaxed(turf_atomic64_t* object, uint64_t expected, uint64_t desired);
+extern  intreg_t turf_compareExchangeWeak64Relaxed(turf_atomic64_t* object, uint64_t* expected, uint64_t desired);
+extern  uint64_t turf_exchange64Relaxed(turf_atomic64_t* object, uint64_t desired);
+extern  uint64_t turf_fetchAdd64Relaxed(turf_atomic64_t* object, int64_t operand);
+extern  uint64_t turf_fetchAnd64Relaxed(turf_atomic64_t* object, uint64_t operand);
+extern  uint64_t turf_fetchOr64Relaxed(turf_atomic64_t* object, uint64_t operand);
+#endif
+
 #endif // TURF_C_ATOMIC_H

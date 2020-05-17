@@ -23,7 +23,7 @@
 //-------------------------------------
 //  Inlining
 //-------------------------------------
-#define TURF_C_INLINE static inline
+#define TURF_C_INLINE inline
 #define TURF_FORCE_INLINE inline __attribute__((always_inline))
 #define TURF_NO_INLINE __attribute__((noinline))
 
@@ -36,9 +36,9 @@
 //  CPU intrinsics
 //-------------------------------------
 TURF_C_INLINE void turf_yieldHWThread() {
-#if MINT_CPU_X86 || MINT_CPU_X64
+#if TURF_CPU_X86 || TURF_CPU_X64
     // Only implemented on x86/64
-    asm volatile("pause");
+    __asm__ volatile("pause\n": : : "memory");
 #endif
 }
 

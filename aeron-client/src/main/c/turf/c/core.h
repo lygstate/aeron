@@ -24,15 +24,6 @@
 #if TURF_TARGET_XBOX_360    // Xbox 360
     #include <xtl.h>
 #elif TURF_TARGET_WIN32 || TURF_TARGET_MINGW     // Win32 API
-    #ifndef WIN32_LEAN_AND_MEAN
-        #define WIN32_LEAN_AND_MEAN
-    #endif
-    #ifndef NOMINMAX
-        #define NOMINMAX
-    #endif
-    #include <windows.h>
-    #undef WIN32_LEAN_AND_MEAN
-    #undef NOMINMAX
 #endif
 
 //---------------------------------------------
