@@ -23,7 +23,7 @@
 //-------------------------------------
 //  Inlining
 //-------------------------------------
-#define TURF_C_INLINE static inline
+#define TURF_C_INLINE inline
 #define TURF_FORCE_INLINE inline __attribute__((always_inline))
 #define TURF_NO_INLINE __attribute__((noinline))
 
