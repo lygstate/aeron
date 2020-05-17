@@ -80,9 +80,6 @@ SET(HEADERS
     concurrent/SleepingIdleStrategy.h
     concurrent/YieldingIdleStrategy.h
     concurrent/BackOffIdleStrategy.h
-    concurrent/atomic/Atomic64_gcc_cpp11.h
-    concurrent/atomic/Atomic64_gcc_x86_64.h
-    concurrent/atomic/Atomic64_msvc.h
     concurrent/broadcast/BroadcastBufferDescriptor.h
     concurrent/broadcast/BroadcastReceiver.h
     concurrent/broadcast/BroadcastTransmitter.h
@@ -138,11 +135,15 @@ add_library(aeron_client STATIC ${SOURCE} ${HEADERS})
 add_library(aeron_client_shared SHARED ${SOURCE} ${HEADERS})
 
 target_include_directories(aeron_client
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+    PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${AERON_C_CLIENT_SOURCE_PATH}
     )
 
 target_include_directories(aeron_client_shared
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+    PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${AERON_C_CLIENT_SOURCE_PATH}
     )
 
 if (MSVC)
