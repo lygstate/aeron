@@ -80,7 +80,7 @@ void aeron_thread_set_name(const char* role_name)
 
 #elif defined(AERON_COMPILER_MSVC)
 
-static BOOL aeron_thread_once_callback(PINIT_ONCE init_once, void (*callback)(void), void** context)
+static BOOL WINAPI aeron_thread_once_callback(PINIT_ONCE init_once, void (*callback)(void), void** context)
 {
     callback();
     return TRUE;
@@ -231,19 +231,5 @@ void * aeron_thread_get_specific(pthread_key_t key)
 #error Unsupported platform!
 #endif
 
- // sched
+extern void proc_yield();
 
-#if defined(AERON_COMPILER_GCC)
-
-#include <sched.h>
-
-void proc_yield()
-{
-    __asm__ volatile("pause\n": : : "memory");
-}
-
-#elif defined(AERON_COMPILER_MSVC)
-
-#else
-#error Unsupported platform!
-#endif

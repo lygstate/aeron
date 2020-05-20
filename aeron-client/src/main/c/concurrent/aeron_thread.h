@@ -100,8 +100,12 @@ void aeron_micro_sleep(size_t microseconds);
 // sched
 
 #if defined(AERON_COMPILER_GCC)
+#include <sched.h>
 
-void proc_yield();
+inline void proc_yield()
+{
+    __asm__ volatile("pause\n": : : "memory");
+}
 
 #elif defined(AERON_COMPILER_MSVC)
 
