@@ -100,8 +100,6 @@ set(HEADERS
     collections/aeron_str_to_ptr_hash_map.h
     command/aeron_control_protocol.h
     concurrent/aeron_atomic.h
-    concurrent/aeron_atomic64_gcc_x86_64.h
-    concurrent/aeron_atomic64_msvc.h
     concurrent/aeron_broadcast_descriptor.h
     concurrent/aeron_broadcast_receiver.h
     concurrent/aeron_broadcast_transmitter.h
