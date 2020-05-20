@@ -26,9 +26,8 @@
 
     #if defined(_M_X64)
         #define AERON_CPU_X64 1
-
     #else
-        #error Unsupported CPU!
+        #define AERON_CPU_X86 1
     #endif
 
 #elif defined(__GNUC__)
