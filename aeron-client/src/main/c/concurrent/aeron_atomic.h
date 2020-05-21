@@ -48,19 +48,16 @@ do \
 } \
 while (false)
 
-#define AERON_GET_AND_ADD_INT64(original, current, value) \
-do \
-{ \
-    original = (int64_t)turf_fetchAdd64Relaxed((turf_atomic64_t*)&current, (int64_t)value); \
-} \
-while (false)
 
-#define AERON_GET_AND_ADD_INT32(original, current, value) \
-do \
-{ \
-    original = (int32_t)turf_fetchAdd32Relaxed((turf_atomic32_t*)&current, (int32_t)value); \
-} \
-while (false)
+inline int64_t aeron_get_and_add_int64(volatile int64_t* current, int64_t value)
+{
+    return (int64_t)turf_fetchAdd64Relaxed((turf_atomic64_t*)current, (int64_t)value);
+}
+
+inline int32_t aeron_get_and_add_int32(volatile int32_t* current, int32_t value)
+{
+    return (int32_t)turf_fetchAdd32Relaxed((turf_atomic32_t*)current, (int32_t)value);
+} 
 
 inline bool aeron_cmpxchg64(volatile int64_t* destination, int64_t expected, int64_t desired)
 {
