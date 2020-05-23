@@ -188,7 +188,7 @@ int aeron_receive_channel_endpoint_send_buffers(aeron_receive_channel_endpoint_t
     {
         aeron_receive_destination_t *destination = endpoint->destinations.array[i].destination;
         result = destination->data_paths->sendmmsg_func(destination->data_paths, &destination->transport, send_buffers);
-        if (result != send_buffers->count)
+        if (result < 0)
         {
             break;
         }
@@ -199,7 +199,7 @@ int aeron_receive_channel_endpoint_send_buffers(aeron_receive_channel_endpoint_t
         aeron_counter_increment(endpoint->short_sends_counter, 1);
     }
 
-    return result < 0 ? result : len == 0 ? 0 : send_buffers->bytes_sent;
+    return 0;
 }
 
 int aeron_receive_channel_endpoint_send_sm(
