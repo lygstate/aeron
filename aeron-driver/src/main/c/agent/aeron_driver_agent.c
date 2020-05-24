@@ -38,6 +38,7 @@
 #include "util/aeron_dlopen.h"
 #include "concurrent/aeron_thread.h"
 #include "aeron_windows.h"
+#include "util/aeron_clock.h"
 
 static AERON_INIT_ONCE agent_is_initialized = AERON_INIT_ONCE_VALUE;
 static aeron_mpsc_rb_t logging_mpsc_rb;
@@ -45,23 +46,6 @@ static uint8_t *rb_buffer = NULL;
 static uint64_t mask = 0;
 static FILE *logfp = NULL;
 static aeron_thread_t log_reader_thread;
-
-int64_t aeron_agent_epoch_clock()
-{
-    struct timespec ts;
-#if defined(AERON_COMPILER_MSVC)
-    if (aeron_clock_gettime_realtime(&ts) < 0)
-    {
-        return -1;
-    }
-#else
-    if (clock_gettime(CLOCK_REALTIME, &ts) < 0)
-    {
-        return -1;
-    }
-#endif
-    return (ts.tv_sec * 1000) + (ts.tv_nsec / 1000000);
-}
 
 void aeron_agent_format_date(char *str, size_t count, int64_t timestamp)
 {
@@ -138,7 +122,7 @@ static void initialize_agent_logging()
             exit(EXIT_FAILURE);
         }
 
-        fprintf(logfp, "%s\n", dissect_log_start(aeron_agent_epoch_clock()));
+        fprintf(logfp, "%s\n", dissect_log_start(aeron_epoch_clock()));
     }
 }
 
@@ -147,7 +131,7 @@ void aeron_driver_agent_conductor_to_driver_interceptor(
 {
     uint8_t buffer[MAX_CMD_LENGTH + sizeof(aeron_driver_agent_cmd_log_header_t)];
     aeron_driver_agent_cmd_log_header_t *hdr = (aeron_driver_agent_cmd_log_header_t *)buffer;
-    hdr->time_ms = aeron_agent_epoch_clock();
+    hdr->time_ms = aeron_epoch_clock();
     hdr->cmd_id = msg_type_id;
     memcpy(buffer + sizeof(aeron_driver_agent_cmd_log_header_t), message, length);
 
@@ -159,7 +143,7 @@ void aeron_driver_agent_conductor_to_client_interceptor(
 {
     uint8_t buffer[MAX_CMD_LENGTH + sizeof(aeron_driver_agent_cmd_log_header_t)];
     aeron_driver_agent_cmd_log_header_t *hdr = (aeron_driver_agent_cmd_log_header_t *)buffer;
-    hdr->time_ms = aeron_agent_epoch_clock();
+    hdr->time_ms = aeron_epoch_clock();
     hdr->cmd_id = msg_type_id;
     memcpy(buffer + sizeof(aeron_driver_agent_cmd_log_header_t), message, length);
 
@@ -179,7 +163,7 @@ int aeron_driver_agent_map_raw_log_interceptor(
     aeron_driver_agent_map_raw_log_op_header_t *hdr = (aeron_driver_agent_map_raw_log_op_header_t *)buffer;
     size_t path_len = strlen(path);
 
-    hdr->time_ms = aeron_agent_epoch_clock();
+    hdr->time_ms = aeron_epoch_clock();
     hdr->map_raw.map_raw_log.path_len = (int32_t)path_len;
     hdr->map_raw.map_raw_log.result = result;
     hdr->map_raw.map_raw_log.addr = (uintptr_t)mapped_raw_log;
@@ -197,7 +181,7 @@ int aeron_driver_agent_map_raw_log_close_interceptor(aeron_mapped_raw_log_t *map
     uint8_t buffer[AERON_MAX_PATH + sizeof(aeron_driver_agent_map_raw_log_op_header_t)];
     aeron_driver_agent_map_raw_log_op_header_t *hdr = (aeron_driver_agent_map_raw_log_op_header_t *)buffer;
 
-    hdr->time_ms = aeron_agent_epoch_clock();
+    hdr->time_ms = aeron_epoch_clock();
     hdr->map_raw.map_raw_log_close.addr = (uintptr_t)mapped_raw_log;
     memcpy(&hdr->map_raw.map_raw_log_close.log, mapped_raw_log, sizeof(hdr->map_raw.map_raw_log.log));
     hdr->map_raw.map_raw_log_close.result = aeron_map_raw_log_close(mapped_raw_log, filename);
@@ -215,7 +199,7 @@ void aeron_driver_agent_log_frame(
     aeron_driver_agent_frame_log_header_t *hdr = (aeron_driver_agent_frame_log_header_t *)buffer;
     size_t length = sizeof(aeron_driver_agent_frame_log_header_t);
 
-    hdr->time_ms = aeron_agent_epoch_clock();
+    hdr->time_ms = aeron_epoch_clock();
     hdr->result = (int32_t)result;
     hdr->sockaddr_len = msg_namelen;
     hdr->message_len = message_len;

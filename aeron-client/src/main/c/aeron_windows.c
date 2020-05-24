@@ -13,19 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "util/aeron_platform.h"
 
-#if defined(AERON_COMPILER_MSVC)
+#if defined(__linux__)
+#define _BSD_SOURCE
+#define _GNU_SOURCE
+#endif
+
+#include "util/aeron_platform.h"
+#include <time.h>
+#include <stdio.h>
 #include "aeron_windows.h"
 #include "util/aeron_error.h"
-
-#include <WinSock2.h>
-#include <Windows.h>
-#include <time.h>
-#include <intrin.h>
-
 #include "concurrent/aeron_thread.h"
 #include "aeron_alloc.h"
+
+#if defined(AERON_COMPILER_MSVC)
+#include <WinSock2.h>
+#include <Windows.h>
+#include <intrin.h>
 
 #define __builtin_bswap32 _byteswap_ulong
 #define __builtin_bswap64 _byteswap_uint64
@@ -178,7 +183,7 @@ BOOL aeron_ipv6_does_prefix_match(struct in6_addr *in6_addr1, struct in6_addr *i
     return aeron_uint128_equals(aeron_uint128_bitwise_and(addr1, netmask), aeron_uint128_bitwise_and(addr2, netmask));
 }
 
-void aeron_srand48(UINT64 aeron_nano_clock)
+void aeron_srand48(uint64_t aeron_nano_clock)
 {
     srand((unsigned int)aeron_nano_clock);
 }
@@ -268,6 +273,22 @@ char *aeron_strndup(const char *value, size_t length)
 
 #else
 
-typedef int aeron_make_into_non_empty_translation_unit_t;
+int aeron_clock_gettime_monotonic(struct timespec *tp)
+{
+#if defined(__CYGWIN__) || defined(__linux__)
+    return clock_gettime(CLOCK_MONOTONIC, tp);
+#else
+    return clock_gettime(CLOCK_MONOTONIC_RAW, tp);
+#endif
+}
+
+int aeron_clock_gettime_realtime(struct timespec *tp)
+{
+#if defined(CLOCK_REALTIME_COARSE)
+    return clock_gettime(CLOCK_REALTIME_COARSE, tp);
+#else
+    return clock_gettime(CLOCK_REALTIME, tp);
+#endif
+}
 
 #endif
