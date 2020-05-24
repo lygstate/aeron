@@ -21,6 +21,8 @@
 #define _GNU_SOURCE
 #endif
 
+#define sockaddr_storage_use_system
+
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>

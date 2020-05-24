@@ -28,6 +28,7 @@
 
 extern "C"
 {
+#define sockaddr_storage_use_system
 #include "aeron_driver_conductor.h"
 #include "util/aeron_error.h"
 #include "aeron_driver_sender.h"

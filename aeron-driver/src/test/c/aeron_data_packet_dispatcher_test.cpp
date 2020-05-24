@@ -19,6 +19,7 @@
 
 extern "C"
 {
+#define sockaddr_storage_use_system
 #include <util/aeron_fileutil.h>
 #include <concurrent/aeron_atomic.h>
 #include <concurrent/aeron_distinct_error_log.h>

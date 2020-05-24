@@ -21,6 +21,7 @@
 
 extern "C"
 {
+#define sockaddr_storage_use_system
 #include "uri/aeron_uri.h"
 #include "util/aeron_netutil.h"
 #include "util/aeron_error.h"

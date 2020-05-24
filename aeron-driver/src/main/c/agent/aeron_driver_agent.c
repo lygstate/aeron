@@ -19,6 +19,8 @@
 #define _GNU_SOURCE
 #endif
 
+#define sockaddr_storage_use_system
+
 #if !defined(_MSC_VER)
 
 #include <pthread.h>

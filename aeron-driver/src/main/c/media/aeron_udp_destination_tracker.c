@@ -19,6 +19,8 @@
 #define _GNU_SOURCE
 #endif
 
+#define sockaddr_storage_use_system
+
 #include <uri/aeron_uri.h>
 #include "protocol/aeron_udp_protocol.h"
 #include "util/aeron_netutil.h"

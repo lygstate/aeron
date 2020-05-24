@@ -20,6 +20,9 @@
 #endif
 
 #include <string.h>
+
+#define sockaddr_storage_use_system
+
 #include "aeron_socket.h"
 #include <uri/aeron_uri.h>
 #include "aeron_driver_sender.h"

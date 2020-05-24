@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#define sockaddr_storage_use_system
+
 #include "util/aeron_platform.h"
 
 #if defined(AERON_COMPILER_MSVC)

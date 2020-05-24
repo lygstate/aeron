@@ -22,6 +22,9 @@
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
+
+#define sockaddr_storage_use_system
+
 #include "aeron_socket.h"
 #include <stdio.h>
 #include <uri/aeron_uri.h>

@@ -18,7 +18,7 @@
 #define _BSD_SOURCE
 #define _GNU_SOURCE
 #endif
-
+#define sockaddr_storage_use_system
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>

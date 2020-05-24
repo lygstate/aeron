@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
+#include <stdlib.h>
 #include <gtest/gtest.h>
 
 extern "C"
 {
-#include <stdlib.h>
+#define sockaddr_storage_use_system
 #include "util/aeron_parse_util.h"
 #include "util/aeron_env.h"
 #include "aeron_name_resolver.h"

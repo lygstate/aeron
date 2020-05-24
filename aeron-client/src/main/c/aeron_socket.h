@@ -32,15 +32,40 @@
 
 typedef int aeron_socket_t;
 
-#elif defined(AERON_COMPILER_MSVC) && defined(AERON_CPU_X64)
-#include <WinSock2.h>
-#include <windows.h>
-#include <Ws2ipdef.h>
-#include <WS2tcpip.h>
-#include <Iphlpapi.h>
+#elif defined(AERON_COMPILER_MSVC)
+#if defined(sockaddr_storage_use_system)
+    #include <WinSock2.h>
+    #include <windows.h>
+    #include <Ws2ipdef.h>
+    #include <WS2tcpip.h>
+    #include <Iphlpapi.h>
+#else
+    #include <basetsd.h>
+    typedef unsigned long ULONG;
+    typedef unsigned short USHORT;
+    typedef int INT;
+    typedef int socklen_t;
+    struct sockaddr;
+    typedef USHORT ADDRESS_FAMILY;
+    typedef char CHAR;
 
-// SOCKET is uint64_t but we need a signed type to match the Linux version
-typedef int64_t aeron_socket_t;
+    struct sockaddr_storage {
+        ADDRESS_FAMILY ss_family;      // address family
+
+        CHAR __ss_pad1[6];  // 6 byte pad, this is to make
+                                    //   implementation specific pad up to
+                                    //   alignment field that follows explicit
+                                    //   in the data structure
+        __int64 __ss_align;            // Field to force desired structure
+        CHAR __ss_pad2[112];  // 112 byte pad to achieve desired size;
+                                    //   _SS_MAXSIZE value minus size of
+                                    //   ss_family, __ss_pad1, and
+                                    //   __ss_align fields is 112
+    };
+#endif
+
+    // SOCKET is uint64_t but we need a signed type to match the Linux version
+    typedef INT_PTR aeron_socket_t;
 
 struct iovec
 {

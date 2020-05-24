@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#define sockaddr_storage_use_system
+
 #include "util/aeron_error.h"
 #include "aeron_driver_receiver.h"
 #include "media/aeron_receive_destination.h"

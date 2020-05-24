@@ -18,6 +18,7 @@
 
 extern "C"
 {
+#define sockaddr_storage_use_system
 #include "media/aeron_udp_channel.h"
 #include "util/aeron_error.h"
 #include "uri/aeron_uri.h"

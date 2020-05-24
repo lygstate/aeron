@@ -16,6 +16,9 @@
 
 #include <stdio.h>
 #include <inttypes.h>
+
+#define sockaddr_storage_use_system
+
 #include <aeron_driver_context.h>
 #include <uri/aeron_uri.h>
 #include "aeron_socket.h"

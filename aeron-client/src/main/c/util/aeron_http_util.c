@@ -19,6 +19,8 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
+#define sockaddr_storage_use_system
+
 #include "aeron_http_util.h"
 #include "aeron_error.h"
 #include "aeron_netutil.h"
