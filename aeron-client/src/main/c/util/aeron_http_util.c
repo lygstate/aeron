@@ -19,6 +19,17 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
+
+#include <util/aeron_platform.h>
+
+#if defined(AERON_COMPILER_MSVC)
+#include <WinSock2.h>
+#include <Windows.h>
+#include <Ws2ipdef.h>
+#include <WS2tcpip.h>
+#include <Iphlpapi.h>
+#endif
+
 #include "aeron_http_util.h"
 #include "aeron_error.h"
 #include "aeron_netutil.h"

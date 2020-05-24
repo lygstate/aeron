@@ -19,7 +19,6 @@
 #define _GNU_SOURCE
 #endif
 
-#include <aeron_socket.h>
 #include <stdio.h>
 
 #include "util/aeron_arrayutil.h"

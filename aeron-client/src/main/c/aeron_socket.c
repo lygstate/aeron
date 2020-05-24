@@ -13,9 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#if defined(__linux__)
+#define _BSD_SOURCE
+#define _GNU_SOURCE
+#endif
 
 #include <string.h>
 #include <errno.h>
+#include <time.h>
+
+#include "util/aeron_platform.h"
+
+#if defined(AERON_COMPILER_MSVC)
+#include <winsock2.h>
+#include <windows.h>
+#include <ws2ipdef.h>
+#include <wS2tcpip.h>
+#include <iphlpapi.h>
+#include <mswsock.h>
+#endif
 
 #include "util/aeron_error.h"
 #include "aeron_socket.h"
@@ -256,10 +272,6 @@ void freeifaddrs(struct ifaddrs *current)
     }
 }
 
-#include <ws2ipdef.h>
-#include <iphlpapi.h>
-#include <stdio.h>
-
 ssize_t recvmsg(aeron_socket_t fd, struct msghdr *msghdr, int flags)
 {
     DWORD size = 0;
@@ -319,6 +331,36 @@ ssize_t sendmsg(aeron_socket_t fd, struct msghdr *msghdr, int flags)
 int poll(struct pollfd *fds, nfds_t nfds, int timeout)
 {
     return WSAPoll(fds, nfds, timeout);
+}
+
+const char *aeron_inet_ntop(int af, const void *src, char *dst, socklen_t size)
+{
+    return inet_ntop(af, src, dst, size);
+}
+
+int aeron_inet_pton(int af, const char *src, void *dst)
+{
+    return inet_pton(af, src, dst);
+}
+
+uint32_t aeron_htonl(uint32_t hostlong)
+{
+    return htonl(hostlong);
+}
+
+uint16_t aeron_htons(uint16_t hostshort)
+{
+    return htons(hostshort);
+}
+
+uint32_t aeron_ntohl(uint32_t netlong)
+{
+    return ntohl(netlong);
+}
+
+uint16_t aeron_ntohs(uint16_t netshort)
+{
+    return ntohs(netshort);
 }
 
 aeron_socket_t aeron_socket(int domain, int type, int protocol)
@@ -449,6 +491,144 @@ bool aeron_is_addr_multicast(struct sockaddr_storage *addr)
         struct sockaddr_in *a = (struct sockaddr_in *)addr;
 
         result = IN_MULTICAST(ntohl(a->sin_addr.s_addr));
+    }
+
+    return result;
+}
+
+int aeron_udp_recvmmsg(
+    aeron_socket_t fd,
+    void *context,
+    struct aeron_mmsghdr *msgvec,
+    size_t count,
+    int *bytes_rcved,
+    aeron_udp_recv_func_t recv_func)
+{
+    *bytes_rcved = 0;
+#if defined(HAVE_RECVMMSG)
+    struct timespec tv = { .tv_nsec = 0, .tv_sec = 0 };
+
+    int result = recvmmsg(fd, (struct mmsghdr *)msgvec, count, 0, &tv);
+    if (result < 0)
+    {
+        int err = errno;
+
+        if (EINTR == err || EAGAIN == err)
+        {
+            return 0;
+        }
+
+        aeron_set_err_from_last_err_code("recvmmsg");
+        return -1;
+    }
+    else if (0 == result)
+    {
+        return 0;
+    }
+    else
+    {
+        for (size_t i = 0, length = (size_t)result; i < length; i++)
+        {
+            recv_func(
+                context,
+                msgvec[i].msg_hdr.msg_iov[0].iov_base,
+                msgvec[i].msg_len,
+                msgvec[i].msg_hdr.msg_name);
+            *bytes_rcved += msgvec[i].msg_len;
+        }
+
+        return result;
+    }
+#else
+    int work_count = 0;
+
+    for (size_t i = 0, length = count; i < length; i++)
+    {
+        ssize_t result = recvmsg(fd, &msgvec[i].msg_hdr, 0);
+
+        if (result < 0)
+        {
+            int err = errno;
+
+            if (EINTR == err || EAGAIN == err)
+            {
+                break;
+            }
+
+            aeron_set_err_from_last_err_code("recvmsg");
+            return -1;
+        }
+
+        if (0 == result)
+        {
+            break;
+        }
+
+        msgvec[i].msg_len = (unsigned int)result;
+        recv_func(
+            context,
+            msgvec[i].msg_hdr.msg_iov[0].iov_base,
+            msgvec[i].msg_len,
+            msgvec[i].msg_hdr.msg_name);
+        *bytes_rcved += msgvec[i].msg_len;
+        work_count++;
+    }
+
+    return work_count;
+#endif
+}
+
+int aeron_udp_sendmmsg(
+    aeron_socket_t fd,
+    struct aeron_mmsghdr *msgvec,
+    size_t count,
+    int *bytes_sent)
+{
+    int result = 0;
+#if defined(HAVE_SENDMMSG)
+    result = sendmmsg(fd, (struct mmsghdr *)msgvec, count, 0);
+    if (result < 0)
+    {
+        aeron_set_err_from_last_err_code("sendmmsg");
+        result = -1;
+        return -1;
+    }
+#else
+
+    for (size_t i = 0; i < count; i++)
+    {
+        ssize_t sendmsg_result = sendmsg(fd, &msgvec[i].msg_hdr, 0);
+        if (sendmsg_result < 0)
+        {
+            aeron_set_err_from_last_err_code("sendmsg");
+            result = -1;
+            break;
+        }
+
+        msgvec[i].msg_len = (unsigned int)sendmsg_result;
+
+        result++;
+
+        if (sendmsg_result < (ssize_t)msgvec[i].msg_hdr.msg_iov->iov_len)
+        {
+            break;
+        }
+    }
+#endif
+    *bytes_sent = 0;
+
+    for (int i = 0; i < result; i += 1)
+    {
+        *bytes_sent += msgvec[i].msg_len;
+        if (msgvec[i].msg_len == 0)
+        {
+            break;
+        }
+        if (msgvec[i].msg_len < msgvec->msg_hdr.msg_iov[i].iov_len)
+        {
+            result = i + 1;
+            break;
+        }
     }
 
     return result;
