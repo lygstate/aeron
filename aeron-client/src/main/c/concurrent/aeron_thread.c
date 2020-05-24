@@ -22,6 +22,8 @@
 #include "concurrent/aeron_thread.h"
 #if !defined(_WIN32)
 #include <unistd.h>
+#else
+#include <Windows.h>
 #endif
 
 #define SECOND_AS_NANOSECONDS (1000l * 1000l * 1000l)
@@ -88,7 +90,7 @@ static BOOL WINAPI aeron_thread_once_callback(PINIT_ONCE init_once, void (*callb
 
 void aeron_thread_once(AERON_INIT_ONCE* s_init_once, void* callback)
 {
-    InitOnceExecuteOnce(s_init_once, aeron_thread_once_callback, callback, NULL);
+    InitOnceExecuteOnce((PINIT_ONCE)s_init_once, aeron_thread_once_callback, callback, NULL);
 }
 
 int aeron_mutex_init(aeron_mutex_t* mutex, void* attr)
@@ -226,6 +228,11 @@ void * aeron_thread_get_specific(pthread_key_t key)
     return TlsGetValue(key);
 }
 
+int sched_yield(void)
+{
+    SwitchToThread();
+    return 0;
+}
 
 #else
 #error Unsupported platform!

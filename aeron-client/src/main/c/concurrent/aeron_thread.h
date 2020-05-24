@@ -49,11 +49,10 @@ void aeron_micro_sleep(size_t microseconds);
     #define aeron_thread_set_specific pthread_setspecific
 
 #elif defined(AERON_COMPILER_MSVC)
-
-    #include <WinSock2.h>
-    #include <windows.h>
-    #include <winnt.h>
-
+    #include <basetsd.h>
+    typedef unsigned long DWORD;
+    typedef void *PVOID;
+    typedef void *HANDLE;
     typedef HANDLE aeron_mutex_t;
 
     typedef struct
@@ -64,12 +63,14 @@ void aeron_micro_sleep(size_t microseconds);
         void* result;
     } aeron_thread_t;
 
-    typedef INIT_ONCE AERON_INIT_ONCE;
+    typedef union _AERON_INIT_ONCE {
+        PVOID Ptr;
+    } AERON_INIT_ONCE;
 
     typedef DWORD pthread_attr_t;
     typedef DWORD pthread_key_t;
 
-    #define AERON_INIT_ONCE_VALUE INIT_ONCE_STATIC_INIT;
+    #define AERON_INIT_ONCE_VALUE {0} /* Static initializer */
 
     void aeron_thread_once(AERON_INIT_ONCE* s_init_once, void* callback);
 
@@ -109,7 +110,7 @@ inline void proc_yield()
 
 #elif defined(AERON_COMPILER_MSVC)
 
-#define sched_yield SwitchToThread
+int sched_yield(void);
 #define proc_yield _mm_pause
 
 #else
