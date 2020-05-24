@@ -114,7 +114,7 @@ public:
                 std::memcpy(arr, credentials.data(), credentials.length());
                 arr[credentials.length()] = '\0';
 
-                return { arr, credentials.length() };
+                return { arr, (uint32_t)credentials.length() };
             };
 
         m_context.credentialsSupplier(CredentialsSupplier(onEncodedCredentials));
@@ -809,7 +809,7 @@ TEST_F(AeronArchiveTest, shouldExceptionForIncorrectInitialCredentials)
             std::memcpy(arr, credentials.data(), credentials.length());
             arr[credentials.length()] = '\0';
 
-            return { arr, credentials.length() };
+            return { arr, (uint32_t)credentials.length() };
         };
 
     m_context.credentialsSupplier(CredentialsSupplier(onEncodedCredentials));
@@ -832,7 +832,7 @@ TEST_F(AeronArchiveTest, shouldBeAbleToHandleBeingChallenged)
             std::memcpy(arr, credentials.data(), credentials.length());
             arr[credentials.length()] = '\0';
 
-            return { arr, credentials.length() };
+            return { arr, (uint32_t)credentials.length() };
         };
 
     auto onChallenge =
@@ -844,7 +844,7 @@ TEST_F(AeronArchiveTest, shouldBeAbleToHandleBeingChallenged)
             std::memcpy(arr, credentials.data(), credentials.length());
             arr[credentials.length()] = '\0';
 
-            return { arr, credentials.length() };
+            return { arr, (uint32_t)credentials.length() };
         };
 
     m_context.credentialsSupplier(CredentialsSupplier(onEncodedCredentials, onChallenge));
@@ -866,7 +866,7 @@ TEST_F(AeronArchiveTest, shouldExceptionForIncorrectChallengeCredentials)
             std::memcpy(arr, credentials.data(), credentials.length());
             arr[credentials.length()] = '\0';
 
-            return { arr, credentials.length() };
+            return { arr, (uint32_t)credentials.length() };
         };
 
     auto onChallenge =
@@ -878,7 +878,7 @@ TEST_F(AeronArchiveTest, shouldExceptionForIncorrectChallengeCredentials)
             std::memcpy(arr, credentials.data(), credentials.length());
             arr[credentials.length()] = '\0';
 
-            return { arr, credentials.length() };
+            return { arr, (uint32_t)credentials.length() };
         };
 
     m_context.credentialsSupplier(CredentialsSupplier(onEncodedCredentials, onChallenge));
