@@ -24,16 +24,7 @@
 #include <string.h>
 #include <inttypes.h>
 
-#if defined(AERON_COMPILER_MSVC)
-
-#include <winsock2.h>
-#include <inaddr.h>
-
-#define in_addr_t ULONG
-#else
-#include <unistd.h>
-#endif
-
+#include "aeron_socket.h"
 #include "util/aeron_error.h"
 #include "util/aeron_arrayutil.h"
 #include "aeron_name_resolver.h"

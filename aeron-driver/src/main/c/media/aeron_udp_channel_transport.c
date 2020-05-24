@@ -217,6 +217,32 @@ int aeron_udp_channel_transport_close(aeron_udp_channel_transport_t *transport)
     return 0;
 }
 
+struct aeron_udp_channel_transport_recvmmsg_context
+{
+    aeron_udp_channel_transport_t *transport;
+    aeron_udp_transport_recv_func_t recv_func;
+    void *clientd;
+};
+
+void aeron_udp_channel_transport_recvmmsg_callback(
+    void* context,
+    uint8_t *buffer,
+    size_t length,
+    struct sockaddr_storage *addr)
+{
+    struct aeron_udp_channel_transport_recvmmsg_context *recvmmsg_context =
+        (struct aeron_udp_channel_transport_recvmmsg_context *)context;
+    recvmmsg_context->recv_func(
+        recvmmsg_context->transport->data_paths,
+        recvmmsg_context->transport,
+        recvmmsg_context->clientd,
+        recvmmsg_context->transport->dispatch_clientd,
+        recvmmsg_context->transport->destination_clientd,
+        buffer,
+        length,
+        addr);
+}
+
 int aeron_udp_channel_transport_recvmmsg(
     aeron_udp_channel_transport_t *transport,
     struct aeron_mmsghdr *msgvec,
@@ -225,85 +251,14 @@ int aeron_udp_channel_transport_recvmmsg(
     aeron_udp_transport_recv_func_t recv_func,
     void *clientd)
 {
-#if defined(HAVE_RECVMMSG)
-    struct timespec tv = { .tv_nsec = 0, .tv_sec = 0 };
-
-    int result = recvmmsg(transport->fd, (struct mmsghdr *)msgvec, vlen, 0, &tv);
-    if (result < 0)
-    {
-        int err = errno;
-
-        if (EINTR == err || EAGAIN == err)
-        {
-            return 0;
-        }
-
-        aeron_set_err_from_last_err_code("recvmmsg");
-        return -1;
-    }
-    else if (0 == result)
-    {
-        return 0;
-    }
-    else
-    {
-        for (size_t i = 0, length = (size_t)result; i < length; i++)
-        {
-            recv_func(
-                transport->data_paths,
-                transport,
-                clientd,
-                transport->dispatch_clientd,
-                transport->destination_clientd,
-                msgvec[i].msg_hdr.msg_iov[0].iov_base,
-                msgvec[i].msg_len,
-                msgvec[i].msg_hdr.msg_name);
-            *bytes_rcved += msgvec[i].msg_len;
-        }
-
-        return result;
-    }
-#else
-    int work_count = 0;
-
-    for (size_t i = 0, length = vlen; i < length; i++)
-    {
-        ssize_t result = recvmsg(transport->fd, &msgvec[i].msg_hdr, 0);
-
-        if (result < 0)
-        {
-            int err = errno;
-
-            if (EINTR == err || EAGAIN == err)
-            {
-                break;
-            }
-
-            aeron_set_err_from_last_err_code("recvmsg");
-            return -1;
-        }
-
-        if (0 == result)
-        {
-            break;
-        }
-
-        msgvec[i].msg_len = (unsigned int)result;
-        recv_func(
-            transport->data_paths,
-            transport,
-            clientd,
-            transport->dispatch_clientd,
-            transport->destination_clientd,
-            msgvec[i].msg_hdr.msg_iov[0].iov_base,
-            msgvec[i].msg_len,
-            msgvec[i].msg_hdr.msg_name);
-        *bytes_rcved += msgvec[i].msg_len;
-        work_count++;
-    }
-
-    return work_count;
-#endif
+    int tmp_bytes_rcved = -1;
+    struct aeron_udp_channel_transport_recvmmsg_context context;
+    context.transport = transport;
+    context.recv_func = recv_func;
+    context.clientd = clientd;
+    int recvmmsg_result = aeron_udp_recvmmsg(transport->fd, &context, msgvec, vlen, &tmp_bytes_rcved, aeron_udp_channel_transport_recvmmsg_callback);
+    *bytes_rcved = tmp_bytes_rcved;
+    return recvmmsg_result;
 }
 
 int aeron_udp_channel_transport_sendmmsg(
@@ -312,39 +267,9 @@ int aeron_udp_channel_transport_sendmmsg(
     struct aeron_mmsghdr *msgvec,
     size_t vlen)
 {
-#if defined(HAVE_SENDMMSG)
-    int sendmmsg_result = sendmmsg(transport->fd, (struct mmsghdr *)msgvec, vlen, 0);
-    if (sendmmsg_result < 0)
-    {
-        aeron_set_err_from_last_err_code("sendmmsg");
-        return -1;
-    }
-
+    int bytes_sent = -1;
+    int sendmmsg_result = aeron_udp_sendmmsg(transport->fd, msgvec, vlen, &bytes_sent);
     return sendmmsg_result;
-#else
-    int result = 0;
-
-    for (size_t i = 0, length = vlen; i < length; i++)
-    {
-        ssize_t sendmsg_result = sendmsg(transport->fd, &msgvec[i].msg_hdr, 0);
-        if (sendmsg_result < 0)
-        {
-            aeron_set_err_from_last_err_code("sendmsg");
-            return -1;
-        }
-
-        msgvec[i].msg_len = (unsigned int)sendmsg_result;
-
-        if (0 == sendmsg_result)
-        {
-            break;
-        }
-
-        result++;
-    }
-
-    return result;
-#endif
 }
 
 int aeron_udp_channel_transport_sendmsg(
