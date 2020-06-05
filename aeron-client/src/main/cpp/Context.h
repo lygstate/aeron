@@ -135,6 +135,7 @@ typedef std::function<void()> on_close_client_t;
 const static long NULL_TIMEOUT = -1;
 const static long DEFAULT_MEDIA_DRIVER_TIMEOUT_MS = 10000;
 const static long DEFAULT_RESOURCE_LINGER_MS = 5000;
+const static size_t DEFAULT_FILE_PAGE_SIZE = 4 * 1024;
 
 /**
  * The Default handler for Aeron runtime exceptions.
