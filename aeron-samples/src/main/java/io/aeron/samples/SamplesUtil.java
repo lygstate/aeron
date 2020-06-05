@@ -95,9 +95,18 @@ public class SamplesUtil
             final byte[] data = new byte[length];
             buffer.getBytes(offset, data);
 
-            System.out.printf(
-                "Message to stream %d from session %d (%d@%d) <<%s>>%n",
-                streamId, header.sessionId(), length, offset, new String(data));
+            if (length < 1000 * 10)
+            {
+                System.out.printf(
+                    "Message to stream %d from session %d (%d@%d) <<%s>>%n",
+                    streamId, header.sessionId(), length, offset, new String(data));
+            }
+            else
+            {
+                System.out.printf(
+                    "Message to stream %d from session %d (%d@%d) <<%s>>%n",
+                    streamId, header.sessionId(), length, offset, String.valueOf(length));
+            }
         };
     }
 

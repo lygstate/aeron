@@ -15,9 +15,19 @@
 ::
 
 @echo off
-set /p VERSION=<..\..\version.txt
+set /p VERSION=<..\version.txt
 
 "%JAVA_HOME%\bin\java" ^
-    -cp ..\..\aeron-all\build\libs\aeron-all-%VERSION%.jar ^
-    -Daeron.dir.delete.on.start=true ^
-    %JVM_OPTS% io.aeron.driver.MediaDriver %*
+    -cp ..\aeron-all\build\libs\aeron-all-%VERSION%.jar ^
+    -XX:BiasedLockingStartupDelay=0 ^
+    -XX:+UnlockExperimentalVMOptions ^
+    -XX:+TrustFinalNonStaticFields ^
+    -XX:+UnlockDiagnosticVMOptions ^
+    -XX:GuaranteedSafepointInterval=300000 ^
+    -XX:+UseParallelOldGC ^
+    "-Daeron.term.buffer.length=67108864" ^
+    -Daeron.mtu.length=60000 ^
+    -Daeron.print.configuration=true ^
+    %JVM_OPTS% io.aeron.driver.MediaDriver ^
+    low-latency.properties %*
+pause
