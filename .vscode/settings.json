@@ -1,0 +1,19 @@
+{
+    "C_Cpp.autoAddFileAssociations": false,
+    "cmake.configureArgs": [
+       // "-DAERON_SYSTEM_TESTS=OFF",
+       "-DBUILD_AERON_ARCHIVE_API:BOOL=ON"
+    ],
+    "cmake.ctest.parallelJobs": 10,
+    "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools",
+    "files.exclude": {
+        "**/.classpath": true,
+        "**/.project": true,
+        "**/.settings": true,
+        "**/.factorypath": true
+    },
+    "cmake.preferredGenerators": ["Ninja"],
+    "cmake.buildDirectory": "${workspaceFolder}/build-cmake/${buildType}",
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "git.ignoreLimitWarning": true
+}

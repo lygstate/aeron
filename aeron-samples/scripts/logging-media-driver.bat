@@ -16,10 +16,13 @@
 
 @echo off
 set /p VERSION=<..\..\version.txt
-
+cd /d %~dp0
 "%JAVA_HOME%\bin\java" ^
     -cp ..\..\aeron-all\build\libs\aeron-all-%VERSION%.jar ^
     -javaagent:..\..\aeron-agent\build\libs\aeron-agent-%VERSION%.jar ^
     -XX:BiasedLockingStartupDelay=0 ^
+    -Daeron.dir.delete.on.start=true ^
     -Daeron.event.log=all ^
     %JVM_OPTS% io.aeron.driver.MediaDriver %*
+
+pause

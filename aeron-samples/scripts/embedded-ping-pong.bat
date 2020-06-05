@@ -29,7 +29,8 @@ set /p VERSION=<..\..\version.txt
     -Dagrona.disable.bounds.checks=true ^
     -Daeron.pre.touch.mapped.memory=true ^
     -Daeron.term.buffer.sparse.file=false ^
-    -Daeron.sample.messageLength=32 ^
+    -Daeron.sample.messageLength=%1 ^
+    -Daeron.sample.frameCountLimit=%2 ^
     -Daeron.sample.messages=1000000 ^
     -Daeron.sample.exclusive.publications=true ^
     %JVM_OPTS% io.aeron.samples.EmbeddedPingPong %*
