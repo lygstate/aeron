@@ -27,4 +27,5 @@ export AERON_CONDUCTOR_IDLE_STRATEGY="spin"
 export AERON_SENDER_IDLE_STRATEGY="noop"
 export AERON_RECEIVER_IDLE_STRATEGY="noop"
 
-${AERON_BUILD_DIR}/binaries/aeronmd
+${AERON_BUILD_DIR}/binaries/aeronmd -Daeron.term.buffer.length=67108864 -Daeron.print.configuration=true -Daeron.dir.delete.on.start=1 -Daeron.dir.delete.on.shutdown=1
+
