@@ -111,7 +111,7 @@ MemoryMappedFile::ptr_t Aeron::mapCncFile(const std::string cncFileName, long me
         {
             cncBuffer = MemoryMappedFile::mapExisting(cncFileName.c_str());
         }
-        catch (IOException ex)
+        catch (IOException&)
         {
             cncBuffer = nullptr;
         }
