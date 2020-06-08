@@ -42,6 +42,7 @@ add_executable(LossStat LossStat.cpp ${HEADERS})
 add_executable(DriverTool DriverTool.cpp ${HEADERS})
 add_executable(ExclusiveThroughput ExclusiveThroughput.cpp ${HEADERS})
 add_executable(PingPong PingPong.cpp ${HEADERS})
+add_executable(ServiceDiscovery ServiceDiscovery.cpp ${HEADERS})
 
 target_link_libraries(AeronStat
     ${CLIENT_LINK_LIB})
@@ -90,6 +91,9 @@ target_link_libraries(PingPong
     ${HDRHISTOGRAM_LIBS})
 
 add_dependencies(PingPong hdr_histogram_static)
+
+target_link_libraries(ServiceDiscovery
+    ${CLIENT_LINK_LIB})
 
 if (AERON_INSTALL_TARGETS)
     install(
