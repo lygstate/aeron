@@ -115,6 +115,7 @@ int main(int argc, char **argv)
         {
             context.aeronDir(settings.dirPrefix);
         }
+        int imageCount = 0;
 
         context.newPublicationHandler(
             [](const std::string &channel, std::int32_t streamId, std::int32_t sessionId, std::int64_t correlationId)
@@ -128,17 +129,21 @@ int main(int argc, char **argv)
             });
 
         context.availableImageHandler(
-            [](Image &image)
+            [&](Image &image)
             {
                 std::cout << "Available image correlationId=" << image.correlationId() << " sessionId=" << image.sessionId();
                 std::cout << " at position=" << image.position() << " from " << image.sourceIdentity() << std::endl;
+                std::cout << std::flush;
+                imageCount += 1;
             });
 
         context.unavailableImageHandler(
-            [](Image &image)
+            [&](Image &image)
             {
                 std::cout << "Unavailable image on correlationId=" << image.correlationId() << " sessionId=" << image.sessionId();
                 std::cout << " at position=" << image.position() << " from " << image.sourceIdentity() << std::endl;
+                std::cout << std::flush;
+                imageCount -= 1;
             });
         Aeron aeron(context);
 
@@ -168,10 +173,14 @@ int main(int argc, char **argv)
             std::this_thread::yield();
         }
 
+        while (imageCount == 0)
+        {
+            std::this_thread::yield();
+        }
+
         do
         {
             std::this_thread::yield();
-
         }
         while (running && continuationBarrier("Execute again?"));
 
