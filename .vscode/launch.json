@@ -81,7 +81,7 @@
         "-Daeron.driver.resolver.name=atos",
         "-Daeron.driver.resolver.interface=192.168.199.1:0/24"
       ],
-      "stopAtEntry": true,
+      "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [
         { "name": "AERON_NAME_RESOLVER_SUPPLIER", "value": "driver"},
