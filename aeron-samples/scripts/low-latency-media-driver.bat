@@ -26,7 +26,6 @@ set /p VERSION=<..\..\version.txt
     -XX:GuaranteedSafepointInterval=300000 ^
     -XX:+UseParallelOldGC ^
     "-Daeron.term.buffer.length=67108864" ^
-    -Daeron.mtu.length=60000 ^
     -Daeron.print.configuration=true ^
     %JVM_OPTS% io.aeron.driver.MediaDriver ^
     low-latency.properties %*
