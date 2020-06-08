@@ -103,6 +103,14 @@ int aeron_udp_channel_transport_init(
         }
 #endif
 
+#if defined(SO_BROADCAST)
+        if (aeron_setsockopt(transport->fd, SOL_SOCKET, SO_BROADCAST, &reuse, sizeof(reuse)) < 0)
+        {
+            aeron_set_err_from_last_err_code("setsockopt(SO_BROADCAST)");
+            goto error;
+        }
+#endif
+
         if (is_ipv6)
         {
             struct sockaddr_in6 addr;
