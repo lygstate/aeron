@@ -106,10 +106,10 @@ int aeron_udp_channel_transport_init(
         if (is_ipv6)
         {
             struct sockaddr_in6 addr;
-            memcpy(&addr, bind_addr, sizeof(addr));
+            memcpy(&addr, in6, sizeof(addr));
             addr.sin6_addr = in6addr_any;
 
-            if (bind(transport->fd, (struct sockaddr *)&addr, bind_addr_len) < 0)
+            if (bind(transport->fd, (struct sockaddr *)&addr, sizeof(addr)) < 0)
             {
                 aeron_set_err_from_last_err_code("multicast IPv6 bind");
                 goto error;
@@ -145,10 +145,10 @@ int aeron_udp_channel_transport_init(
         else
         {
             struct sockaddr_in addr;
-            memcpy(&addr, bind_addr, sizeof(addr));
+            memcpy(&addr, in4, sizeof(addr));
             addr.sin_addr.s_addr = INADDR_ANY;
 
-            if (bind(transport->fd, (struct sockaddr *)&addr, bind_addr_len) < 0)
+            if (bind(transport->fd, (struct sockaddr *)&addr, sizeof(addr)) < 0)
             {
                 aeron_set_err_from_last_err_code("multicast IPv4 bind");
                 goto error;
