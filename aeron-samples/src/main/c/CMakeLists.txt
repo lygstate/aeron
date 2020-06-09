@@ -43,6 +43,9 @@ add_executable(streaming_publisher streaming_publisher.c ${HEADERS} ${SOURCES})
 add_executable(streaming_exclusive_publisher streaming_exclusive_publisher.c ${HEADERS} ${SOURCES})
 add_executable(cpong cpong.c ${HEADERS} ${SOURCES})
 add_executable(cping cping.c ${HEADERS} ${SOURCES})
+if (MSVC)
+    add_executable(udp_send udp_send.c)
+endif()
 
 target_link_libraries(basic_publisher
     ${CLIENT_LINK_LIB})
