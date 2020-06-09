@@ -211,6 +211,22 @@ int aeron_udp_channel_transport_init(
             struct sockaddr_in addr_send;
             memcpy(&addr_send, interface_addr, sizeof(addr_send));
             addr_send.sin_port = in4->sin_port;
+
+#if defined(SO_REUSEADDR)
+            if (aeron_setsockopt(transport->fd_send, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
+            {
+                aeron_set_err_from_last_err_code("setsockopt(SO_REUSEADDR)");
+                goto error;
+            }
+#endif
+
+#if defined(SO_REUSEPORT)
+            if (aeron_setsockopt(transport->fd_send, SOL_SOCKET, SO_REUSEPORT, &reuse, sizeof(reuse)) < 0)
+            {
+                aeron_set_err_from_last_err_code("setsockopt(SO_REUSEPORT)");
+                goto error;
+            }
+#endif
             if (bind(transport->fd_send, (struct sockaddr *)&addr_send, sizeof(addr_send)) < 0)
             {
                 aeron_set_err_from_last_err_code("multicast bind send port");
