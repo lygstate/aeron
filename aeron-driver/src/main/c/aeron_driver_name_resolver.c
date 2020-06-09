@@ -205,7 +205,7 @@ int aeron_driver_name_resolver_init(
         &_driver_resolver->local_socket_addr,
         NULL, // Unicast only.
         _driver_resolver->interface_index,
-        0,
+        context->multicast_ttl,
         context->socket_rcvbuf,
         context->socket_sndbuf,
         context,
