@@ -210,7 +210,7 @@ int aeron_udp_channel_transport_init(
 
             struct sockaddr_in addr_send;
             memcpy(&addr_send, interface_addr, sizeof(addr_send));
-            addr_send.sin_port = in4->sin_port;
+            addr_send.sin_port = 0;
 
 #if defined(SO_REUSEADDR)
             if (aeron_setsockopt(transport->fd_send, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
