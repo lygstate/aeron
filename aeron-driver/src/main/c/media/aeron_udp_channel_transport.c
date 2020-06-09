@@ -144,9 +144,10 @@ int aeron_udp_channel_transport_init(
         }
         else
         {
+            struct sockaddr_in *interface_addr = (struct sockaddr_in *)multicast_if_addr;
             struct sockaddr_in addr;
             memcpy(&addr, bind_addr, sizeof(addr));
-            addr.sin_addr.s_addr = INADDR_ANY;
+            addr.sin_addr.s_addr = interface_addr->sin_addr.s_addr;
 
             if (bind(transport->fd, (struct sockaddr *)&addr, bind_addr_len) < 0)
             {
@@ -155,7 +156,6 @@ int aeron_udp_channel_transport_init(
             }
 
             struct ip_mreq mreq;
-            struct sockaddr_in *interface_addr = (struct sockaddr_in *)multicast_if_addr;
 
             mreq.imr_multiaddr.s_addr = in4->sin_addr.s_addr;
             mreq.imr_interface.s_addr = interface_addr->sin_addr.s_addr;
