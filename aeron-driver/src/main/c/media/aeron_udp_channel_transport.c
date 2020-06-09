@@ -232,6 +232,12 @@ int aeron_udp_channel_transport_init(
                 aeron_set_err_from_last_err_code("multicast bind send port");
                 goto error;
             }
+
+            if (aeron_setsockopt(transport->fd_send, IPPROTO_IP, IP_MULTICAST_IF, &interface_addr->sin_addr, sizeof(struct in_addr)) < 0)
+            {
+                aeron_set_err_from_last_err_code("setsockopt(IP_MULTICAST_IF)");
+                goto error;
+            }
         }
     }
 
