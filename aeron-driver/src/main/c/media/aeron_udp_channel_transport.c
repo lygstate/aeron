@@ -49,6 +49,44 @@ struct mmsghdr
 };
 #endif
 
+int aeron_udp_channle_set_shared_options(aeron_socket_t fd, bool is_ipv6, int ttl, size_t socket_rcvbuf, size_t socket_sndbuf)
+{
+    if (ttl > 0)
+    {
+        if (aeron_setsockopt(fd, IPPROTO_IP, is_ipv6 ? IPV6_MULTICAST_HOPS : IP_MULTICAST_TTL, &ttl, sizeof(ttl)) < 0)
+        {
+            aeron_set_err_from_last_err_code("setsockopt(IP_MULTICAST_TTL)");
+            return -1;
+        }
+    }
+
+    if (socket_rcvbuf > 0)
+    {
+        if (aeron_setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &socket_rcvbuf, sizeof(socket_rcvbuf)) < 0)
+        {
+            aeron_set_err_from_last_err_code("setsockopt(SO_RCVBUF)");
+            return -1;
+        }
+    }
+
+    if (socket_sndbuf > 0)
+    {
+        if (aeron_setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &socket_sndbuf, sizeof(socket_sndbuf)) < 0)
+        {
+            aeron_set_err_from_last_err_code("setsockopt(SO_SNDBUF)");
+            return -1;
+        }
+    }
+
+    if (set_socket_non_blocking(fd) < 0)
+    {
+        aeron_set_err_from_last_err_code("set_socket_non_blocking");
+        return -1;
+    }
+
+    return 0;
+}
+
 int aeron_udp_channel_transport_init(
     aeron_udp_channel_transport_t *transport,
     struct sockaddr_storage *bind_addr,
@@ -65,6 +103,7 @@ int aeron_udp_channel_transport_init(
     struct sockaddr_in6 *in6 = (struct sockaddr_in6 *)bind_addr;
 
     transport->fd = -1;
+    transport->fd_send = -1;
     transport->bindings_clientd = NULL;
     if ((transport->fd = aeron_socket(bind_addr->ss_family, SOCK_DGRAM, 0)) < 0)
     {
@@ -82,6 +121,7 @@ int aeron_udp_channel_transport_init(
             aeron_set_err_from_last_err_code("unicast bind");
             goto error;
         }
+        transport->fd_send = transport->fd;
     }
     else
     {
@@ -132,15 +172,6 @@ int aeron_udp_channel_transport_init(
                 aeron_set_err_from_last_err_code("setsockopt(IPV6_MULTICAST_IF)");
                 goto error;
             }
-
-            if (ttl > 0)
-            {
-                if (aeron_setsockopt(transport->fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &ttl, sizeof(ttl)) < 0)
-                {
-                    aeron_set_err_from_last_err_code("setsockopt(IPV6_MULTICAST_HOPS)");
-                    goto error;
-                }
-            }
         }
         else
         {
@@ -172,51 +203,36 @@ int aeron_udp_channel_transport_init(
                 goto error;
             }
 
-            if (ttl > 0)
+            if ((transport->fd_send = aeron_socket(bind_addr->ss_family, SOCK_DGRAM, 0)) < 0)
             {
-                if (aeron_setsockopt(transport->fd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl)) < 0)
-                {
-                    aeron_set_err_from_last_err_code("setsockopt(IP_MULTICAST_TTL)");
-                    goto error;
-                }
+                goto error;
+            }
+
+            struct sockaddr_in addr_send;
+            memcpy(&addr_send, interface_addr, sizeof(addr_send));
+            addr_send.sin_port = in4->sin_port;
+            if (bind(transport->fd_send, (struct sockaddr *)&addr_send, sizeof(addr_send)) < 0)
+            {
+                aeron_set_err_from_last_err_code("multicast bind send port");
+                goto error;
             }
         }
     }
 
-    if (socket_rcvbuf > 0)
+    if (aeron_udp_channle_set_shared_options(transport->fd, is_ipv6, ttl, socket_rcvbuf, socket_sndbuf) < 0)
     {
-        if (aeron_setsockopt(transport->fd, SOL_SOCKET, SO_RCVBUF, &socket_rcvbuf, sizeof(socket_rcvbuf)) < 0)
-        {
-            aeron_set_err_from_last_err_code("setsockopt(SO_RCVBUF)");
-            goto error;
-        }
+        goto error;
     }
-
-    if (socket_sndbuf > 0)
+    if (transport->fd != transport->fd_send &&
+        aeron_udp_channle_set_shared_options(transport->fd_send, is_ipv6, ttl, socket_rcvbuf, socket_sndbuf) < 0)
     {
-        if (aeron_setsockopt(transport->fd, SOL_SOCKET, SO_SNDBUF, &socket_sndbuf, sizeof(socket_sndbuf)) < 0)
-        {
-            aeron_set_err_from_last_err_code("setsockopt(SO_SNDBUF)");
-            goto error;
-        }
-    }
-
-
-    if (set_socket_non_blocking(transport->fd) < 0)
-    {
-        aeron_set_err_from_last_err_code("set_socket_non_blocking");
         goto error;
     }
 
     return 0;
 
     error:
-        if (-1 != transport->fd)
-        {
-            aeron_close_socket(transport->fd);
-        }
-
-        transport->fd = -1;
+        aeron_udp_channel_transport_close(transport);
         return -1;
 }
 
@@ -226,6 +242,13 @@ int aeron_udp_channel_transport_close(aeron_udp_channel_transport_t *transport)
     {
         aeron_close_socket(transport->fd);
     }
+
+    if (transport->fd_send != -1 && transport->fd != transport->fd_send)
+    {
+        aeron_close_socket(transport->fd_send);
+    }
+    transport->fd = -1;
+    transport->fd_send = -1;
 
     return 0;
 }
@@ -350,7 +373,7 @@ int aeron_udp_channel_transport_sendmmsg(
     }
 
 #if defined(HAVE_SENDMMSG)
-    result = sendmmsg(transport->fd, msgvec, send_buffers->count, 0);
+    result = sendmmsg(transport->fd_send, msgvec, send_buffers->count, 0);
     if (result < 0)
     {
         aeron_set_err_from_last_err_code("sendmmsg");
@@ -360,7 +383,7 @@ int aeron_udp_channel_transport_sendmmsg(
 
     for (int i = 0; i < send_buffers->count; i++)
     {
-        ssize_t sendmsg_result = sendmsg(transport->fd, &msgvec[i].msg_hdr, 0);
+        ssize_t sendmsg_result = sendmsg(transport->fd_send, &msgvec[i].msg_hdr, 0);
         if (sendmsg_result < 0)
         {
             aeron_set_err_from_last_err_code("sendmsg");
