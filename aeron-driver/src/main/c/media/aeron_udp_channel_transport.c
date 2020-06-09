@@ -48,16 +48,32 @@ struct mmsghdr
     unsigned int msg_len;
 };
 #endif
+/*
+Win32 socket opts
+https://docs.microsoft.com/en-us/windows/win32/winsock/ipproto-ip-socket-options
+https://docs.microsoft.com/en-us/windows/win32/winsock/ipproto-ipv6-socket-options
 
-int aeron_udp_channle_set_shared_options(aeron_socket_t fd, bool is_ipv6, int ttl, size_t socket_rcvbuf, size_t socket_sndbuf)
+Posix:
+https://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_10_16
+*/
+int aeron_udp_channle_set_shared_options(aeron_socket_t fd, bool is_ipv6, int ttl, int loop, size_t socket_rcvbuf, size_t socket_sndbuf)
 {
     if (ttl > 0)
     {
+#if defined (_WIN32)
+        DWORD ttl_win32 = ttl;
+        if (aeron_setsockopt(fd, IPPROTO_IP, is_ipv6 ? IPV6_MULTICAST_HOPS : IP_MULTICAST_TTL, &ttl_win32, sizeof(ttl_win32)) < 0)
+        {
+            aeron_set_err_from_last_err_code("setsockopt(IP_MULTICAST_TTL)");
+            return -1;
+        }
+#else
         if (aeron_setsockopt(fd, IPPROTO_IP, is_ipv6 ? IPV6_MULTICAST_HOPS : IP_MULTICAST_TTL, &ttl, sizeof(ttl)) < 0)
         {
             aeron_set_err_from_last_err_code("setsockopt(IP_MULTICAST_TTL)");
             return -1;
         }
+#endif
     }
 
     if (socket_rcvbuf > 0)
@@ -76,6 +92,12 @@ int aeron_udp_channle_set_shared_options(aeron_socket_t fd, bool is_ipv6, int tt
             aeron_set_err_from_last_err_code("setsockopt(SO_SNDBUF)");
             return -1;
         }
+    }
+
+    if (aeron_setsockopt(fd, IPPROTO_IP, is_ipv6 ? IPV6_MULTICAST_LOOP : IP_MULTICAST_LOOP , &loop, sizeof(loop)) < 0)
+    {
+        aeron_set_err_from_last_err_code("setsockopt(MULTICAST_LOOP)");
+        return -1;
     }
 
     if (set_socket_non_blocking(fd) < 0)
@@ -227,12 +249,12 @@ int aeron_udp_channel_transport_init(
         }
     }
 
-    if (aeron_udp_channle_set_shared_options(transport->fd, is_ipv6, ttl, socket_rcvbuf, socket_sndbuf) < 0)
+    if (aeron_udp_channle_set_shared_options(transport->fd, is_ipv6, ttl, 1, socket_rcvbuf, socket_sndbuf) < 0)
     {
         goto error;
     }
     if (transport->fd != transport->fd_send &&
-        aeron_udp_channle_set_shared_options(transport->fd_send, is_ipv6, ttl, socket_rcvbuf, socket_sndbuf) < 0)
+        aeron_udp_channle_set_shared_options(transport->fd_send, is_ipv6, ttl, 1, socket_rcvbuf, socket_sndbuf) < 0)
     {
         goto error;
     }
