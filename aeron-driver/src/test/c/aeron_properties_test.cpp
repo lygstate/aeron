@@ -22,7 +22,6 @@ extern "C"
 {
 #include "util/aeron_properties_util.h"
 #include "util/aeron_error.h"
-#include "util/aeron_http_util.h"
 #include "aeronmd.h"
 }
 
@@ -169,36 +168,4 @@ TEST_F(DriverConfigurationTest, shouldParseContinuationWithBlankLine)
     EXPECT_EQ(parseLine("   Value"), 1);
     EXPECT_EQ(m_name, "propertyName");
     EXPECT_EQ(m_value, "propertyValue");
-}
-
-TEST_F(DriverConfigurationTest, DISABLED_shouldHttpRetrieve)
-{
-    aeron_http_response_t *response = NULL;
-    int result = aeron_http_retrieve(&response, "http://localhost:8000/aeron-throughput.properties", -1L);
-
-    if (-1 == result)
-    {
-        std::cout << aeron_errmsg() << std::endl;
-    }
-    else
-    {
-        std::cout << std::to_string(response->status_code) << std::endl;
-        std::cout << std::to_string(response->content_length) << std::endl;
-        std::cout << std::to_string(response->length) << std::endl;
-        std::cout << std::to_string(response->headers_offset) << std::endl;
-        std::cout << std::to_string(response->body_offset) << std::endl;
-        std::cout << (response->buffer + response->body_offset) << std::endl;
-    }
-}
-
-TEST_F(DriverConfigurationTest, DISABLED_shouldHttpRetrieveProperties)
-{
-    int result = aeron_properties_http_load("http://localhost:8000/aeron-throughput.properties");
-
-    if (-1 == result)
-    {
-        std::cout << aeron_errmsg() << std::endl;
-    }
-
-    std::cout << getenv("AERON_MTU_LENGTH") << std::endl;
 }

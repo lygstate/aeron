@@ -60,20 +60,11 @@ int aeron_udp_channle_set_shared_options(aeron_socket_t fd, bool is_ipv6, int tt
 {
     if (ttl > 0)
     {
-#if defined (_WIN32)
-        DWORD ttl_win32 = ttl;
-        if (aeron_setsockopt(fd, IPPROTO_IP, is_ipv6 ? IPV6_MULTICAST_HOPS : IP_MULTICAST_TTL, &ttl_win32, sizeof(ttl_win32)) < 0)
-        {
-            aeron_set_err_from_last_err_code("setsockopt(IP_MULTICAST_TTL)");
-            return -1;
-        }
-#else
         if (aeron_setsockopt(fd, IPPROTO_IP, is_ipv6 ? IPV6_MULTICAST_HOPS : IP_MULTICAST_TTL, &ttl, sizeof(ttl)) < 0)
         {
             aeron_set_err_from_last_err_code("setsockopt(IP_MULTICAST_TTL)");
             return -1;
         }
-#endif
     }
 
     if (socket_rcvbuf > 0)

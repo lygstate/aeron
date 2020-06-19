@@ -23,7 +23,6 @@
 #include "aeron_properties_util.h"
 #include "aeron_error.h"
 #include "aeron_parse_util.h"
-#include "aeron_http_util.h"
 #include "util/aeron_env.h"
 
 int aeron_next_non_whitespace(const char *buffer, size_t start, size_t end)
@@ -294,74 +293,6 @@ int aeron_properties_buffer_load(const char *buffer)
     return 0;
 }
 
-int aeron_properties_http_load(const char *url)
-{
-    char new_url[AERON_MAX_HTTP_URL_LENGTH];
-    aeron_http_response_t *response = NULL;
-    int remaining_redirects = 1, result = -1;
-
-    do
-    {
-        if (aeron_http_retrieve(&response, url, AERON_HTTP_PROPERTIES_TIMEOUT_NS) < 0)
-        {
-            return -1;
-        }
-
-        if (200 == response->status_code)
-        {
-            break;
-        }
-        else if (301 == response->status_code || 302 == response->status_code)
-        {
-            if (remaining_redirects-- > 0)
-            {
-
-                switch (aeron_http_header_get(response, "Location:", new_url, sizeof(new_url)))
-                {
-                    case -1:
-                        goto cleanup;
-
-                    case 0:
-                        aeron_set_err(EINVAL, "%s", "redirect specified, but no Location header found");
-                        goto cleanup;
-
-                    default:
-                    {
-                        url = new_url + strlen("Location:");
-
-                        while ('\0' != *url && (' ' == *url || '\t' == *url))
-                        {
-                            url++;
-                        }
-
-                        aeron_http_response_delete(response);
-                        response = NULL;
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                aeron_set_err(EINVAL, "%s", "too many redirects for URL");
-                goto cleanup;
-            }
-        }
-        else
-        {
-            aeron_set_err(EINVAL, "status code %" PRIu32 " from HTTP GET", (uint32_t)response->status_code);
-            goto cleanup;
-        }
-    }
-    while (true);
-
-    result = aeron_properties_buffer_load(response->buffer + response->body_offset);
-
-    cleanup:
-        aeron_http_response_delete(response);
-
-        return result;
-}
-
 int aeron_properties_load(const char *url_or_filename)
 {
     int result;
@@ -369,10 +300,6 @@ int aeron_properties_load(const char *url_or_filename)
     if (strncmp("file://", url_or_filename, strlen("file://")) == 0)
     {
         result = aeron_properties_file_load(url_or_filename + strlen("file://"));
-    }
-    else if (strncmp("http://", url_or_filename, strlen("http://")) == 0)
-    {
-        result = aeron_properties_http_load(url_or_filename);
     }
     else
     {
