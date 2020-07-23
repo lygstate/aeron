@@ -17,41 +17,25 @@
 #ifndef AERON_TESTUTILS_H
 #define AERON_TESTUTILS_H
 
-#if !defined(_MSC_VER)
-#include <unistd.h>
-#include <cstdlib>
-#else
-#include <windows.h>
-#endif
+extern "C"
+{
+#include <util/aeron_fileutil.h>
+#include <util/aeron_error.h>
+#include <aeron_common.h>
+}
 
 #include <util/Exceptions.h>
 
 namespace aeron { namespace test {
 
-std::string makeTempFileName()
+std::string makeTempFileName(size_t size)
 {
-#if !defined(_MSC_VER)
-    char rawname[] = "/tmp/aeron-c.XXXXXXX";
-    int fd = ::mkstemp(rawname);
-    ::close(fd);
-    ::unlink(rawname);
-
-    return std::string(rawname);
-
-#else
-    char tmpdir[MAX_PATH + 1];
-    char tmpfile[MAX_PATH];
-
-    if (::GetTempPath(MAX_PATH, &tmpdir[0]) > 0)
+    char filename[AERON_MAX_PATH];
+    if (aeron_log_buffer_filename_create_direct(filename, sizeof(filename) - 1, AERON_LOG_BUFFER_TYPE_IPC, rand(), size) < 0)
     {
-        if (::GetTempFileName(tmpdir, TEXT("aeron-c"), 0, &tmpfile[0]) != 0)
-        {
-            return std::string(tmpfile);
-        }
+        throw util::IOException(std::string("Failed to makeTempFileName file: ") + filename + " " + aeron_errmsg(), SOURCEINFO);
     }
-
-    throw util::IllegalStateException("could not make unique temp filename", SOURCEINFO);
-#endif
+    return std::string(filename);
 }
 
 inline void throwIllegalArgumentException()

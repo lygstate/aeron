@@ -23,10 +23,6 @@
 using namespace aeron::util;
 using namespace aeron::test;
 
-#ifdef _MSC_VER
-#define unlink _unlink
-#endif
-
 TEST(mmfileTest, failToOpen)
 {
     ASSERT_ANY_THROW({
@@ -39,7 +35,7 @@ TEST(mmfileTest, createCheck)
     MemoryMappedFile::ptr_t m;
 
     const size_t size = 10000;
-    const std::string name(makeTempFileName());
+    const std::string name(makeTempFileName(size));
 
     ASSERT_NO_THROW({
         m = MemoryMappedFile::createNew(name.c_str(), 0, size);
@@ -53,7 +49,7 @@ TEST(mmfileTest, createCheck)
         ASSERT_EQ(m->getMemoryPtr()[n], 0);
     }
 
-    ::unlink(name.c_str());
+    aeron_log_buffer_filename_delete(name.c_str());
 }
 
 TEST(mmfileTest, writeReadCheck)
@@ -61,7 +57,7 @@ TEST(mmfileTest, writeReadCheck)
     MemoryMappedFile::ptr_t m;
 
     const size_t size = 10000;
-    std::string name = makeTempFileName();
+    std::string name = makeTempFileName(size);
 
     ASSERT_NO_THROW({
         m = MemoryMappedFile::createNew(name.c_str(), 0, size);
@@ -85,6 +81,5 @@ TEST(mmfileTest, writeReadCheck)
     {
         ASSERT_EQ(m->getMemoryPtr()[n], static_cast<uint8_t>(n & 0xff));
     }
-
-    ::unlink(name.c_str());
+    aeron_log_buffer_filename_delete(name.c_str());
 }
