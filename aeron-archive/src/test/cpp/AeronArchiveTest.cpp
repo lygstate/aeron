@@ -36,6 +36,11 @@ typedef intptr_t pid_t;
 #include <vector>
 #include <cstring>
 
+extern "C"
+{
+#include "util/aeron_fileutil.h"
+}
+
 #include <gtest/gtest.h>
 
 #include "ChannelUriStringBuilder.h"
@@ -48,43 +53,6 @@ typedef intptr_t pid_t;
 using namespace aeron;
 using namespace aeron::util;
 using namespace aeron::archive::client;
-
-#ifdef _WIN32
-int aeron_delete_directory(const char *dir)
-{
-    SHFILEOPSTRUCT file_op =
-    {
-        nullptr,
-        FO_DELETE,
-        dir,
-        "",
-        FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT,
-        false,
-        nullptr,
-        ""
-    };
-
-    return SHFileOperation(&file_op);
-}
-
-#else
-
-static int unlink_func(const char *path, const struct stat *sb, int type_flag, struct FTW *ftw)
-{
-    if (remove(path) != 0)
-    {
-        perror("remove");
-    }
-
-    return 0;
-}
-
-int aeron_delete_directory(const char *dirname)
-{
-    return nftw(dirname, unlink_func, 64, FTW_DEPTH | FTW_PHYS);
-}
-
-#endif
 
 class AeronArchiveTest : public testing::Test
 {

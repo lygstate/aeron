@@ -20,12 +20,10 @@
 #include <memory>
 #include "util/Export.h"
 
-#ifdef _WIN32
-    #include <cstddef>
-    typedef void * HANDLE;
-#else
-    #include <sys/types.h>
-#endif
+extern "C"
+{
+#include "util/aeron_fileutil.h"
+}
 
 namespace aeron { namespace util
 {
@@ -35,15 +33,11 @@ class CLIENT_EXPORT MemoryMappedFile
 public:
     typedef std::shared_ptr<MemoryMappedFile> ptr_t;
 
-#ifdef _WIN32
-    static ptr_t createNew(const char *filename, std::size_t offset, std::size_t length);
-    static ptr_t mapExisting(const char *filename, std::size_t offset, std::size_t length, bool readOnly = false);
-#else
-    static ptr_t createNew(const char *filename, off_t offset, std::size_t length);
-    static ptr_t mapExisting(const char *filename, off_t offset, std::size_t length, bool readOnly = false);
-#endif
-
+    static ptr_t createNew(const char *filename, uint64_t offset, size_t length);
+    static ptr_t mapExisting(const char *filename, uint64_t offset, size_t length, bool readOnly = false);
     static ptr_t mapExisting(const char *filename, bool readOnly = false);
+
+    static void close(const char *filename);
 
     inline static ptr_t mapExistingReadOnly(const char *filename)
     {
@@ -62,34 +56,10 @@ public:
     static std::int64_t getFileSize(const char *filename);
 
 private:
-    struct FileHandle
-    {
-#ifdef _WIN32
-        HANDLE handle;
-#else
-        int handle = -1;
-#endif
-    };
 
-#ifdef _WIN32
-    MemoryMappedFile(FileHandle fd, std::size_t offset, std::size_t length, bool readOnly);
-#else
-    MemoryMappedFile(FileHandle fd, off_t offset, std::size_t length, bool readOnly);
-#endif
+    MemoryMappedFile(const aeron_mapped_file_t &mapped_file);
 
-    std::uint8_t *doMapping(std::size_t size, FileHandle fd, std::size_t offset, bool readOnly);
-
-    std::uint8_t *m_memory = nullptr;
-    std::size_t m_memorySize = 0;
-    static std::size_t m_page_size;
-    static bool fill(FileHandle fd, std::size_t sz, std::uint8_t value);
-
-#ifdef _WIN32
-    HANDLE m_file = nullptr;
-    HANDLE m_mapping = nullptr;
-    void cleanUp();
-#endif
-
+    aeron_mapped_file_t mapped_file;
 };
 
 }}

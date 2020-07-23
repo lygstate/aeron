@@ -35,16 +35,12 @@ static const std::int64_t LOG_FILE_LENGTH = (TERM_LENGTH * 3) + LogBufferDescrip
 static const std::string SOURCE_IDENTITY = "127.0.0.1:43567";
 static const std::string COUNTER_LABEL = "counter label";
 
-#ifdef _MSC_VER
-#define unlink _unlink
-#endif
-
 class ClientConductorTest : public testing::Test, public ClientConductorFixture
 {
 public:
     ClientConductorTest() :
-        m_logFileName(makeTempFileName()),
-        m_logFileName2(makeTempFileName())
+        m_logFileName(makeTempFileName((size_t)LOG_FILE_LENGTH)),
+        m_logFileName2(makeTempFileName((size_t)LOG_FILE_LENGTH))
     {
     }
 
@@ -75,8 +71,8 @@ public:
 
     void TearDown() override
     {
-        ::unlink(m_logFileName.c_str());
-        ::unlink(m_logFileName2.c_str());
+        aeron_log_buffer_filename_delete(m_logFileName.c_str());
+        aeron_log_buffer_filename_delete(m_logFileName2.c_str());
     }
 
 protected:

@@ -15,6 +15,10 @@
 #
 
 SET(SOURCE
+    ${AERON_C_CLIENT_SOURCE_PATH}/concurrent/aeron_thread.c
+    ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_error.c
+    ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_fileutil.c
+    ${AERON_C_CLIENT_SOURCE_PATH}/aeron_alloc.c
     Publication.cpp
     ExclusivePublication.cpp
     Subscription.cpp
@@ -28,6 +32,10 @@ SET(SOURCE
     util/CommandOptionParser.cpp)
 
 SET(HEADERS
+    ${AERON_C_CLIENT_SOURCE_PATH}/concurrent/aeron_thread.h
+    ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_error.h
+    ${AERON_C_CLIENT_SOURCE_PATH}/util/aeron_fileutil.h
+    ${AERON_C_CLIENT_SOURCE_PATH}/aeron_alloc.h
     ClientConductor.h
     CncFileDescriptor.h
     Image.h
