@@ -462,8 +462,6 @@ private:
     SleepingIdleStrategy m_idleStrategy;
     AgentRunner<ClientConductor, SleepingIdleStrategy> m_conductorRunner;
     AgentInvoker<ClientConductor> m_conductorInvoker;
-
-    static MemoryMappedFile::ptr_t mapCncFile(Context &context);
 };
 
 }

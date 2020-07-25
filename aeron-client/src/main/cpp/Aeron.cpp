@@ -28,11 +28,13 @@ static const std::chrono::duration<long, std::milli> IDLE_SLEEP_MS_100(100);
 
 static const char *AGENT_NAME = "client-conductor";
 
+MemoryMappedFile::ptr_t mapCncFile(const std::string cncFileName, long mediaDriverTimeoutMs);
+
 Aeron::Aeron(Context &context) :
     m_randomEngine(m_randomDevice()),
     m_sessionIdDistribution(-INT_MAX, INT_MAX),
     m_context(context.conclude()),
-    m_cncBuffer(mapCncFile(m_context)),
+    m_cncBuffer(mapCncFile(m_context.cncFileName(), m_context.mediaDriverTimeout())),
     m_toDriverAtomicBuffer(CncFileDescriptor::createToDriverBuffer(m_cncBuffer)),
     m_toClientsAtomicBuffer(CncFileDescriptor::createToClientsBuffer(m_cncBuffer)),
     m_countersMetadataBuffer(CncFileDescriptor::createCounterMetadataBuffer(m_cncBuffer)),
@@ -86,11 +88,11 @@ Aeron::~Aeron()
     // memory mapped files should be freed by the destructor of the shared_ptr
 }
 
-MemoryMappedFile::ptr_t Aeron::mapCncFile(Context &context)
+MemoryMappedFile::ptr_t mapCncFile(const std::string cncFileName, long mediaDriverTimeoutMs)
 {
     auto minLength = static_cast<std::int64_t>(CncFileDescriptor::META_DATA_LENGTH);
-    const long long deadlineMs = currentTimeMillis() + context.m_mediaDriverTimeout;
-    const std::string &filename = context.cncFileName();
+    const long long deadlineMs = currentTimeMillis() + mediaDriverTimeoutMs;
+    const std::string &filename = cncFileName;
     MemoryMappedFile::ptr_t cncBuffer;
 
     while (true)
@@ -162,7 +164,7 @@ MemoryMappedFile::ptr_t Aeron::mapCncFile(Context &context)
         }
 
         const long long timeMs = currentTimeMillis();
-        if (ringBuffer.consumerHeartbeatTime() < (timeMs - context.m_mediaDriverTimeout))
+        if (ringBuffer.consumerHeartbeatTime() < (timeMs - mediaDriverTimeoutMs))
         {
             if (timeMs > deadlineMs)
             {
