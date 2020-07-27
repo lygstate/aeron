@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+#include <string.h>
+#include <errno.h>
+
+#include "util/aeron_error.h"
 #include "aeron_socket.h"
 
 #if defined(AERON_COMPILER_GCC)
@@ -332,6 +336,123 @@ void aeron_close_socket(aeron_socket_t socket)
 #else
 #error Unsupported platform!
 #endif
+
+bool aeron_in6_is_addr_linklocal(const struct in6_addr *a)
+{
+    return IN6_IS_ADDR_LINKLOCAL(a);
+}
+
+int aeron_socket_addr_to_string(const struct sockaddr_storage *addr, char* buf, socklen_t buf_size)
+{
+    const void *in_addr = addr->ss_family == AF_INET ?
+        (const void *)&((struct sockaddr_in *)addr)->sin_addr :
+        (const void *)&((struct sockaddr_in6 *)addr)->sin6_addr;
+
+    if (inet_ntop(
+        addr->ss_family,
+                in_addr,
+                buf,
+                buf_size) == NULL)
+    {
+        aeron_set_err_from_last_err_code("aeron_socket_addr_to_string failed");
+        return -1;
+    }
+    return 0;
+}
+
+uint16_t aeron_socket_addr_port(const struct sockaddr_storage *addr)
+{
+    uint16_t net_port = addr->ss_family == AF_INET ?
+        ((struct sockaddr_in *)addr)->sin_port :
+        ((struct sockaddr_in6 *)addr)->sin6_port;
+    return ntohs(net_port);
+}
+
+unsigned int aeron_if_nametoindex(const char *name)
+{
+    return if_nametoindex(name);
+}
+
+struct in6_addr aeron_in6addr_any()
+{
+    return in6addr_any;
+}
+
+int aeron_bind(aeron_socket_t sockfd, const struct sockaddr *addr, socklen_t addrlen)
+{
+    return bind(sockfd, addr, addrlen);
+}
+
+int aeron_getsockname(aeron_socket_t sockfd, struct sockaddr *addr, socklen_t *addrlen)
+{
+    return getsockname(sockfd, addr, addrlen);
+}
+
+int aeron_gethostname(char *name, size_t len)
+{
+    return gethostname(name, (int)len);
+}
+
+int aeron_ip_addr_resolver(const char *host, const char *service, struct sockaddr_storage *sockaddr, int family_hint, int protocol)
+{
+    aeron_net_init();
+
+    struct addrinfo hints;
+    struct addrinfo *info = NULL;
+
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = family_hint;
+    hints.ai_socktype = (IPPROTO_UDP == protocol) ? SOCK_DGRAM : SOCK_STREAM;
+    hints.ai_protocol = protocol;
+
+    int error, result = -1;
+    if ((error = getaddrinfo(host, service, &hints, &info)) != 0)
+    {
+        aeron_set_err(EINVAL, "Unable to resolve host=(%s): (%d) %s", host, error, gai_strerror(error));
+        return -1;
+    }
+
+    if (info->ai_family == AF_INET)
+    {
+        memcpy(sockaddr, info->ai_addr, sizeof(struct sockaddr_in));
+        sockaddr->ss_family = AF_INET;
+        result = 0;
+    }
+    else if (info->ai_family == AF_INET6)
+    {
+        memcpy(sockaddr, info->ai_addr, sizeof(struct sockaddr_in6));
+        sockaddr->ss_family = AF_INET6;
+        result = 0;
+    }
+    else
+    {
+        aeron_set_err(EINVAL, "Only IPv4 and IPv6 hosts are supported: family=%d", info->ai_family);
+    }
+
+    freeaddrinfo(info);
+
+    return result;
+}
+
+bool aeron_is_addr_multicast(struct sockaddr_storage *addr)
+{
+    bool result = false;
+
+    if (AF_INET6 == addr->ss_family)
+    {
+        struct sockaddr_in6 *a = (struct sockaddr_in6 *)addr;
+
+        result = IN6_IS_ADDR_MULTICAST(&a->sin6_addr);
+    }
+    else if (AF_INET == addr->ss_family)
+    {
+        struct sockaddr_in *a = (struct sockaddr_in *)addr;
+
+        result = IN_MULTICAST(ntohl(a->sin_addr.s_addr));
+    }
+
+    return result;
+}
 
 /* aeron_getsockopt and aeron_setsockopt ensure a consistent signature between platforms
  * (MSVC uses char * instead of void * for optval, which causes warnings)

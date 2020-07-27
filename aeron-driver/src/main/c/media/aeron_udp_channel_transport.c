@@ -20,13 +20,6 @@
 #endif
 
 #include "util/aeron_platform.h"
-
-#if defined(AERON_COMPILER_MSVC)
-#include <io.h>
-#else
-#include <unistd.h>
-#endif
-
 #include "aeron_socket.h"
 
 #include <string.h>
@@ -70,7 +63,7 @@ int aeron_udp_channel_transport_init(
 
     if (!is_multicast)
     {
-        if (bind(transport->fd, (struct sockaddr *)bind_addr, bind_addr_len) < 0)
+        if (aeron_bind(transport->fd, (struct sockaddr *)bind_addr, bind_addr_len) < 0)
         {
             aeron_set_err_from_last_err_code("unicast bind");
             goto error;
@@ -100,9 +93,9 @@ int aeron_udp_channel_transport_init(
         {
             struct sockaddr_in6 addr;
             memcpy(&addr, bind_addr, sizeof(addr));
-            addr.sin6_addr = in6addr_any;
+            addr.sin6_addr = aeron_in6addr_any();
 
-            if (bind(transport->fd, (struct sockaddr *)&addr, bind_addr_len) < 0)
+            if (aeron_bind(transport->fd, (struct sockaddr *)&addr, bind_addr_len) < 0)
             {
                 aeron_set_err_from_last_err_code("multicast IPv6 bind");
                 goto error;
@@ -141,7 +134,7 @@ int aeron_udp_channel_transport_init(
             memcpy(&addr, bind_addr, sizeof(addr));
             addr.sin_addr.s_addr = INADDR_ANY;
 
-            if (bind(transport->fd, (struct sockaddr *)&addr, bind_addr_len) < 0)
+            if (aeron_bind(transport->fd, (struct sockaddr *)&addr, bind_addr_len) < 0)
             {
                 aeron_set_err_from_last_err_code("multicast IPv4 bind");
                 goto error;
@@ -388,7 +381,7 @@ int aeron_udp_channel_transport_bind_addr_and_port(
     struct sockaddr_storage addr;
     socklen_t addr_len = sizeof(addr);
 
-    if (getsockname(transport->fd, (struct sockaddr *)&addr, &addr_len) < 0)
+    if (aeron_getsockname(transport->fd, (struct sockaddr *)&addr, &addr_len) < 0)
     {
         aeron_set_err_from_last_err_code("getsockname %s:%d", __FILE__, __LINE__);
         return -1;

@@ -25,7 +25,6 @@
 #include "util/aeron_netutil.h"
 #include "util/aeron_error.h"
 #include "util/aeron_parse_util.h"
-#include "aeron_socket.h"
 
 #if defined(AERON_COMPILER_GCC)
 
@@ -47,47 +46,6 @@ __inline DWORD64 __builtin_popcountll(DWORD64 operand)
 #else
 #error Unsupported platform!
 #endif
-
-int aeron_ip_addr_resolver(const char *host, struct sockaddr_storage *sockaddr, int family_hint, int protocol)
-{
-    aeron_net_init();
-
-    struct addrinfo hints;
-    struct addrinfo *info = NULL;
-
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = family_hint;
-    hints.ai_socktype = (IPPROTO_UDP == protocol) ? SOCK_DGRAM : SOCK_STREAM;
-    hints.ai_protocol = protocol;
-
-    int error, result = -1;
-    if ((error = getaddrinfo(host, NULL, &hints, &info)) != 0)
-    {
-        aeron_set_err(EINVAL, "Unable to resolve host=(%s): (%d) %s", host, error, gai_strerror(error));
-        return -1;
-    }
-
-    if (info->ai_family == AF_INET)
-    {
-        memcpy(sockaddr, info->ai_addr, sizeof(struct sockaddr_in));
-        sockaddr->ss_family = AF_INET;
-        result = 0;
-    }
-    else if (info->ai_family == AF_INET6)
-    {
-        memcpy(sockaddr, info->ai_addr, sizeof(struct sockaddr_in6));
-        sockaddr->ss_family = AF_INET6;
-        result = 0;
-    }
-    else
-    {
-        aeron_set_err(EINVAL, "Only IPv4 and IPv6 hosts are supported: family=%d", info->ai_family);
-    }
-
-    freeaddrinfo(info);
-
-    return result;
-}
 
 bool aeron_try_parse_ipv4(const char *host, struct sockaddr_storage *sockaddr)
 {
@@ -112,7 +70,7 @@ int aeron_ipv4_addr_resolver(const char *host, int protocol, struct sockaddr_sto
         return 0;
     }
 
-    return aeron_ip_addr_resolver(host, sockaddr, AF_INET, protocol);
+    return aeron_ip_addr_resolver(host, NULL, sockaddr, AF_INET, protocol);
 }
 
 bool aeron_try_parse_ipv6(const char *host, struct sockaddr_storage *sockaddr)
@@ -138,7 +96,7 @@ int aeron_ipv6_addr_resolver(const char *host, int protocol, struct sockaddr_sto
         return 0;
     }
 
-    return aeron_ip_addr_resolver(host, sockaddr, AF_INET6, protocol);
+    return aeron_ip_addr_resolver(host, NULL, sockaddr, AF_INET6, protocol);
 }
 
 int aeron_udp_port_resolver(const char *port_str, bool optional)
@@ -465,7 +423,7 @@ int aeron_ip_lookup_func(
             if ((flags & IFF_LOOPBACK) && !state->found)
             {
                 memcpy(state->if_addr, addr, addr_len);
-                *state->if_index = if_nametoindex(name);
+                *state->if_index = aeron_if_nametoindex(name);
                 state->found = true;
                 return 1;
             }
@@ -476,7 +434,7 @@ int aeron_ip_lookup_func(
                 if (current_if_prefixlen > state->if_prefixlen)
                 {
                     memcpy(state->if_addr, addr, addr_len);
-                    *state->if_index = if_nametoindex(name);
+                    *state->if_index = aeron_if_nametoindex(name);
                     state->if_prefixlen = current_if_prefixlen;
                 }
 
@@ -558,7 +516,7 @@ int aeron_find_unicast_interface(
     {
         interface_addr->ss_family = AF_INET6;
         struct sockaddr_in6 *addr = (struct sockaddr_in6 *)interface_addr;
-        addr->sin6_addr = in6addr_any;
+        addr->sin6_addr = aeron_in6addr_any();
         addr->sin6_port = htons(0);
     }
     else
@@ -572,32 +530,13 @@ int aeron_find_unicast_interface(
     return 0;
 }
 
-bool aeron_is_addr_multicast(struct sockaddr_storage *addr)
-{
-    bool result = false;
-
-    if (AF_INET6 == addr->ss_family)
-    {
-        struct sockaddr_in6 *a = (struct sockaddr_in6 *)addr;
-
-        result = IN6_IS_ADDR_MULTICAST(&a->sin6_addr);
-    }
-    else if (AF_INET == addr->ss_family)
-    {
-        struct sockaddr_in *a = (struct sockaddr_in *)addr;
-
-        result = IN_MULTICAST(ntohl(a->sin_addr.s_addr));
-    }
-
-    return result;
-}
-
 bool aeron_is_wildcard_addr(struct sockaddr_storage *addr)
 {
     bool result = false;
 
     if (AF_INET6 == addr->ss_family)
     {
+        struct in6_addr in6addr_any = aeron_in6addr_any();
         struct sockaddr_in6 *a = (struct sockaddr_in6 *)addr;
 
         return memcmp(&a->sin6_addr, &in6addr_any, sizeof(in6addr_any)) == 0 ? true : false;

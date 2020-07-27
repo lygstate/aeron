@@ -140,7 +140,7 @@ int aeron_driver_name_resolver_init(
             goto error_cleanup;
         }
 
-        if (gethostname(local_hostname, AERON_MAX_HOSTNAME_LEN) < 0)
+        if (aeron_gethostname(local_hostname, AERON_MAX_HOSTNAME_LEN) < 0)
         {
             aeron_set_err(errno, "Failed to lookup: %s", local_hostname);
             goto error_cleanup;
@@ -468,6 +468,7 @@ static int aeron_driver_name_resolver_on_resolution_entry(
 
 static bool aeron_driver_name_resolver_is_wildcard(int8_t res_type, uint8_t *address)
 {
+    struct in6_addr in6addr_any = aeron_in6addr_any();
     in_addr_t ipv4_wildcard = INADDR_ANY;
     return
         (res_type == AERON_RES_HEADER_TYPE_NAME_TO_IP6_MD && 0 == memcmp(address, &in6addr_any, sizeof(in6addr_any))) ||
