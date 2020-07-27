@@ -35,7 +35,7 @@ typedef struct aeron_udp_channel_stct
     unsigned int interface_index;
     size_t uri_length;
     size_t canonical_length;
-    uint8_t multicast_ttl;
+    uint8_t multicast_ttl; /* 0 means uri have no ttl param */
     bool has_explicit_endpoint;
     bool has_explicit_control;
     bool is_manual_control_mode;
