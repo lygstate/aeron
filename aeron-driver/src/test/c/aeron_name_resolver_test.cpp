@@ -311,6 +311,7 @@ TEST_F(NameResolverTest, DISABLED_shouldSeeNeighborFromBootstrapAndHandleIPv6Wil
     ASSERT_LE(0, m_a.resolver.resolve_func(&m_a.resolver, "B", "endpoint", false, &resolved_address_of_b));
     ASSERT_EQ(AF_INET6, resolved_address_of_b.ss_family);
     struct sockaddr_in6 *in_addr_b = (struct sockaddr_in6 *)&resolved_address_of_b;
+    struct in6_addr in6addr_any = aeron_in6addr_any();
     ASSERT_NE(0, memcmp(&in6addr_any, &in_addr_b->sin6_addr, sizeof(in6addr_any)));
 }
 

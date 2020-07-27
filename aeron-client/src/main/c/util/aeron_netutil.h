@@ -37,10 +37,6 @@ typedef void (*aeron_freeifaddrs_func_t)(struct ifaddrs *);
 typedef int (*aeron_ifaddr_func_t)
     (void *clientd, const char *name, struct sockaddr *addr, struct sockaddr *netmask, unsigned int flags);
 
-#define AERON_ADDR_LEN(a) (AF_INET6 == (a)->ss_family ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in))
-
-int aeron_ip_addr_resolver(const char *host, struct sockaddr_storage *sockaddr, int family_hint, int protocol);
-
 int aeron_udp_port_resolver(const char *port_str, bool optional);
 
 bool aeron_try_parse_ipv4(const char *host, struct sockaddr_storage *sockaddr);
@@ -75,8 +71,6 @@ int aeron_find_interface(const char *interface_str, struct sockaddr_storage *if_
 
 int aeron_find_unicast_interface(
     int family, const char *interface_str, struct sockaddr_storage *interface_addr, unsigned int *interface_index);
-
-bool aeron_is_addr_multicast(struct sockaddr_storage *addr);
 
 bool aeron_is_wildcard_addr(struct sockaddr_storage *addr);
 

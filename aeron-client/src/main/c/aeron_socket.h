@@ -18,6 +18,7 @@
 #define AERON_SOCKET_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "util/aeron_platform.h"
 
 #if defined(AERON_COMPILER_GCC)
@@ -104,6 +105,28 @@ struct aeron_mmsghdr
     struct msghdr msg_hdr;
     unsigned int msg_len;
 };
+
+#define AERON_ADDR_LEN(a) (AF_INET6 == (a)->ss_family ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in))
+
+bool aeron_in6_is_addr_linklocal(const struct in6_addr *a);
+
+int aeron_socket_addr_to_string(const struct sockaddr_storage *addr, char* buf, socklen_t buf_size);
+
+uint16_t aeron_socket_addr_port(const struct sockaddr_storage *addr);
+
+unsigned int aeron_if_nametoindex(const char *name);
+
+struct in6_addr aeron_in6addr_any();
+
+int aeron_bind(aeron_socket_t sockfd, const struct sockaddr *addr, socklen_t addrlen);
+
+int aeron_getsockname(aeron_socket_t sockfd, struct sockaddr *addr, socklen_t *addrlen);
+
+int aeron_gethostname(char *name, size_t len);
+
+int aeron_ip_addr_resolver(const char *host, const char *service, struct sockaddr_storage *sockaddr, int family_hint, int protocol);
+
+bool aeron_is_addr_multicast(struct sockaddr_storage *addr);
 
 int set_socket_non_blocking(aeron_socket_t fd);
 

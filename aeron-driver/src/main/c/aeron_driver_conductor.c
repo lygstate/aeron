@@ -291,7 +291,7 @@ int aeron_driver_conductor_init(aeron_driver_conductor_t *conductor, aeron_drive
     }
 
     char local_hostname[AERON_MAX_HOSTNAME_LEN];
-    if (gethostname(local_hostname, AERON_MAX_HOSTNAME_LEN) < 0)
+    if (aeron_gethostname(local_hostname, AERON_MAX_HOSTNAME_LEN) < 0)
     {
         local_hostname[0] = '\0';
     }
