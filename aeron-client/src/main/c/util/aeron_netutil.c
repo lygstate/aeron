@@ -19,8 +19,10 @@
 #define _GNU_SOURCE
 #endif
 
+#include <inttypes.h>
 #include <string.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include "util/aeron_netutil.h"
 #include "util/aeron_error.h"
@@ -604,4 +606,422 @@ int aeron_format_source_identity(char *buffer, size_t length, struct sockaddr_st
     }
 
     return total;
+}
+
+/*
+Win32 socket opts
+https://docs.microsoft.com/en-us/windows/win32/winsock/ipproto-ip-socket-options
+https://docs.microsoft.com/en-us/windows/win32/winsock/ipproto-ipv6-socket-options
+
+Posix:
+https://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_10_16
+*/
+
+static int set_dont_route(aeron_socket_t socket, bool ipv6)
+{
+    if (ipv6)
+    {
+        const unsigned uone = 1;
+        if (aeron_setsockopt(socket, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &uone, sizeof(uone)) < 0)
+        {
+            aeron_set_err_from_last_err_code("set_dont_route(IPV6_UNICAST_HOPS)");
+            return -1;
+        }
+        return 0;
+    }
+    else
+    {
+        const int one = 1;
+        if (aeron_setsockopt(socket, SOL_SOCKET, SO_DONTROUTE, &one, sizeof(one)) < 0)
+        {
+            aeron_set_err_from_last_err_code("set_dont_route(SO_DONTROUTE)");
+            return -1;
+        }
+        return 0;
+    }
+}
+
+static int set_rcvbuf(aeron_socket_t sock, size_t socket_min_rcvbuf_size)
+{
+    size_t size;
+    socklen_t optlen = (socklen_t)sizeof(size);
+
+    if (aeron_getsockopt(sock, SOL_SOCKET, SO_RCVBUF, &size, &optlen) < 0)
+    {
+        /* not all stacks support getting/setting RCVBUF */
+        if (errno == ENOPROTOOPT)
+        {
+            aeron_set_err(0, "set_rcvbuf: cannot retrieve socket receive buffer size");
+            return 0;
+        }
+        aeron_set_err_from_last_err_code("set_rcvbuf: get SO_RCVBUF failed");
+        return -1;
+    }
+
+    if (size < socket_min_rcvbuf_size)
+    {
+        /* make sure the receive buffersize is at least the minimum required */
+        size = socket_min_rcvbuf_size;
+        aeron_setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
+
+        /* We don't check the return code from setsockopt, because some O/Ss tend
+        to silently cap the buffer size.  The only way to make sure is to read
+        the option value back and check it is now set correctly. */
+        optlen = (socklen_t)sizeof(size);
+        if (aeron_getsockopt(sock, SOL_SOCKET, SO_RCVBUF, &size, &optlen) < 0)
+        {
+            aeron_set_err_from_last_err_code("set_rcvbuf: get SO_RCVBUF failed");
+            return -1;
+        }
+
+        if (size < socket_min_rcvbuf_size)
+        {
+            aeron_set_err(EINVAL, "set_rcvbuf: failed to increase socket receive buffer size to %" PRIu32 " bytes, maximum is %" PRIu32 " bytes\n",
+                          (uint32_t)socket_min_rcvbuf_size, (uint32_t)size);
+        }
+    }
+
+    return 0;
+}
+
+static int set_sndbuf(aeron_socket_t sock, size_t socket_min_sndbuf_size)
+{
+    size_t size;
+    socklen_t optlen = (socklen_t)sizeof(size);
+    if (aeron_getsockopt(sock, SOL_SOCKET, SO_SNDBUF, &size, &optlen) < 0)
+    {
+        /* not all stacks support getting/setting SNDBUF */
+        if (errno == ENOPROTOOPT)
+        {
+            aeron_set_err(0, "set_sndbuf: cannot retrieve socket send buffer size");
+            return 0;
+        }
+        aeron_set_err_from_last_err_code("set_sndbuf: get SO_SNDBUF failed");
+        return -1;
+    }
+
+    if (size < socket_min_sndbuf_size)
+    {
+        /* make sure the send buffersize is at least the minimum required */
+        size = socket_min_sndbuf_size;
+        aeron_setsockopt(sock, SOL_SOCKET, SO_SNDBUF, &size, sizeof(size));
+
+        /* We don't check the return code from setsockopt, because some O/Ss tend
+       to silently cap the buffer size.  The only way to make sure is to read
+       the option value back and check it is now set correctly. */
+        optlen = (socklen_t)sizeof(size);
+        if (aeron_getsockopt(sock, SOL_SOCKET, SO_SNDBUF, &size, &optlen) < 0)
+        {
+            aeron_set_err_from_last_err_code("set_sndbuf: get SO_SNDBUF failed");
+            return -1;
+        }
+
+        if (size < socket_min_sndbuf_size)
+        {
+            aeron_set_err(EINVAL, "set_sndbuf: failed to increase socket send buffer size to %" PRIu32 " bytes, maximum is %" PRIu32 " bytes\n",
+                          (uint32_t)socket_min_sndbuf_size, (uint32_t)size);
+        }
+    }
+
+    return 0;
+}
+
+static int set_mc_options_transmit_ipv6(aeron_socket_t sock, unsigned interface_no, unsigned ttl, unsigned loop)
+{
+    /* Function is a never-called no-op if IPv6 is not supported to keep the call-site a bit cleaner  */
+    int rc = -1;
+    if ((rc = aeron_setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_IF, &interface_no, sizeof(interface_no))) < 0)
+    {
+        aeron_set_err_from_last_err_code("set_mc_options_transmit_ipv6: set IPV6_MULTICAST_IF failed");
+        return -1;
+    }
+    if ((rc = aeron_setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &ttl, sizeof(ttl))) < 0)
+    {
+        aeron_set_err_from_last_err_code("set_mc_options_transmit_ipv6: set IPV6_MULTICAST_HOPS failed");
+        return -1;
+    }
+    if ((rc = aeron_setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &loop, sizeof(loop))) < 0)
+    {
+        aeron_set_err_from_last_err_code("set_mc_options_transmit_ipv6: set IPV6_MULTICAST_LOOP failed");
+        return -1;
+    }
+    return 0;
+}
+
+static int set_mc_options_transmit_ipv4_if(
+    aeron_socket_t sock,
+    struct sockaddr_in *interface_addr,
+    unsigned interface_no)
+{
+#if (defined(__linux) || defined(__APPLE__)) && !LWIP_SOCKET
+    struct ip_mreqn mreqn;
+    memset(&mreqn, 0, sizeof(mreqn));
+    /* looks like imr_multiaddr is not relevant, not sure about imr_address */
+    mreqn.imr_multiaddr.s_addr = htonl(INADDR_ANY);
+    mreqn.imr_address.s_addr = interface_addr->sin_addr.s_addr;
+    mreqn.imr_ifindex = (int)interface_no;
+    return aeron_setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, &mreqn, sizeof(mreqn));
+#endif
+    return aeron_setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, &interface_addr->sin_addr, sizeof(struct in_addr));
+}
+
+static int set_mc_options_transmit_ipv4(
+    aeron_socket_t sock,
+    struct sockaddr_storage *interface_addr,
+    unsigned interface_no,
+    unsigned ttl,
+    unsigned loop)
+{
+    if (set_mc_options_transmit_ipv4_if(sock, (struct sockaddr_in *)interface_addr, interface_no) < 0)
+    {
+        char buf[AERON_NETUTIL_FORMATTED_MAX_LENGTH];
+        aeron_socket_addr_to_string(interface_addr, buf, sizeof(buf));
+        aeron_set_err_from_last_err_code("set_mc_options_transmit_ipv4: set IP_MULTICAST_IF with %s failed", buf);
+        return -1;
+    }
+    if (aeron_setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl)) < 0)
+    {
+        aeron_set_err_from_last_err_code("set_mc_options_transmit_ipv4: set IP_MULTICAST_TTL failed");
+        return -1;
+    }
+    if (aeron_setsockopt(sock, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop)) < 0)
+    {
+        aeron_set_err_from_last_err_code("set_mc_options_transmit_ipv4: set IP_MULTICAST_LOOP failed");
+        return -1;
+    }
+    return 0;
+}
+
+int aeron_udp_create_conn(
+    aeron_socket_t *sock_ptr,
+    enum aeron_socket_tran_purpose purpose,
+    size_t socket_min_rcvbuf_size,
+    size_t socket_min_sndbuf_size,
+    struct sockaddr_storage *bind_addr,
+    struct sockaddr_storage *interface_addr,
+    unsigned interface_no, unsigned ttl, unsigned loop,
+    unsigned dont_route,
+    int ip_tos)
+{
+    const int one = 1;
+
+    aeron_socket_t sock = -1;
+    bool reuse_addr = false;
+    bool bind_to_any = false;
+    bool bind_to_any_port = false;
+    bool ipv6 = (AF_INET6 == bind_addr->ss_family);
+    const char *purpose_str = NULL;
+    struct sockaddr_storage final_bind_addr = *bind_addr;
+    struct sockaddr_in *in4 = (struct sockaddr_in *)&final_bind_addr;
+    struct sockaddr_in6 *in6 = (struct sockaddr_in6 *)&final_bind_addr;
+    *sock_ptr = -1;
+
+    switch (purpose)
+    {
+    case AERON_SOCKET_TRAN_QOS_XMIT:
+        reuse_addr = false;
+        bind_to_any = false;
+        bind_to_any_port = true;
+        purpose_str = "transmit";
+        break;
+    case AERON_SOCKET_TRAN_QOS_UC:
+        reuse_addr = false;
+        bind_to_any = false;
+        bind_to_any_port = false;
+        purpose_str = "unicast";
+        break;
+    case AERON_SOCKET_TRAN_QOS_RECV_MC:
+        reuse_addr = true;
+        bind_to_any = true;
+        bind_to_any_port = false;
+        purpose_str = "multicast";
+        break;
+    default:
+        aeron_set_err(EINVAL, "aeron_udp_create_conn: unsupported purpose %d", (int)purpose);
+        goto fail;
+    }
+
+    switch (bind_addr->ss_family)
+    {
+    case AF_INET:
+    {
+        if (bind_to_any)
+        {
+            in4->sin_addr.s_addr = htonl(INADDR_ANY);
+        }
+        if (bind_to_any_port)
+        {
+            in4->sin_port = 0;
+        }
+        break;
+    }
+    case AF_INET6:
+    {
+        if (bind_to_any)
+        {
+            in6->sin6_addr = aeron_in6addr_any();
+        }
+        if (bind_to_any_port)
+        {
+            in6->sin6_port = 0;
+        }
+        if (aeron_in6_is_addr_linklocal(&(in6->sin6_addr)))
+        {
+            // A hack that only works if there is only a single interface in use
+            in6->sin6_scope_id = interface_no;
+        }
+        break;
+    }
+    default:
+    {
+        aeron_set_err(EINVAL, "aeron_udp_create_conn: unsupported ss_family %" PRId32, bind_addr->ss_family);
+        goto fail;
+    }
+    }
+
+    if ((sock = aeron_socket(bind_addr->ss_family, SOCK_DGRAM, 0)) < 0)
+    {
+        aeron_set_err_from_last_err_code("aeron_udp_create_conn: failed to create socket");
+        goto fail;
+    }
+
+    if (reuse_addr && aeron_setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) < 0)
+    {
+        aeron_set_err_from_last_err_code("aeron_udp_create_conn: failed to enable address reuse");
+        if (errno != ENOPROTOOPT)
+        {
+            /* There must at some point have been an implementation that refused to do SO_REUSEADDR, but I
+         don't know which */
+            goto fail_w_socket;
+        }
+    }
+
+#if defined(SO_REUSEPORT)
+    if (reuse_addr && aeron_setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &one, sizeof(one)) < 0)
+    {
+        aeron_set_err_from_last_err_code("aeron_udp_create_conn: failed to enable port reuse");
+        goto fail_w_socket;
+    }
+#endif
+
+    if (set_rcvbuf(sock, socket_min_rcvbuf_size) < 0)
+        goto fail_w_socket;
+
+    if (set_sndbuf(sock, socket_min_sndbuf_size) < 0)
+        goto fail_w_socket;
+
+    if (dont_route && set_dont_route(sock, ipv6) < 0)
+        goto fail_w_socket;
+
+    if (aeron_bind(sock, (struct sockaddr *)&final_bind_addr, AERON_ADDR_LEN(&final_bind_addr)) < 0)
+    {
+        /* (= EADDRINUSE) is expected if reuse_addr isn't set, should be handled at
+       a higher level and therefore needs to return a specific error message */
+        char buf[AERON_NETUTIL_FORMATTED_MAX_LENGTH];
+        aeron_socket_addr_to_string(&final_bind_addr, buf, sizeof(buf));
+        aeron_set_err_from_last_err_code("aeron_udp_create_conn: failed to bind to: %s, purpose_str:%s", buf, purpose_str);
+        goto fail_w_socket;
+    }
+
+    if (purpose == AERON_SOCKET_TRAN_QOS_XMIT)
+    {
+        if ((ipv6 ? set_mc_options_transmit_ipv6(sock, interface_no, ttl, loop) : set_mc_options_transmit_ipv4(sock, interface_addr, interface_no, ttl, loop)) < 0)
+        {
+            goto fail_w_socket;
+        }
+    }
+
+    if (ip_tos != 0 && !ipv6)
+    {
+        if (aeron_setsockopt(sock, IPPROTO_IP, IP_TOS, &ip_tos, sizeof(ip_tos)) < 0)
+        {
+            aeron_set_err_from_last_err_code("aeron_udp_create_conn: set IP_TOS with %d failed", ip_tos);
+            goto fail_w_socket;
+        }
+    }
+    if (set_socket_non_blocking(sock) < 0)
+    {
+        aeron_set_err_from_last_err_code("set_socket_non_blocking");
+        goto fail_w_socket;
+    }
+
+    *sock_ptr = sock;
+    return 0;
+fail_w_socket:
+    aeron_close_socket(sock);
+fail:
+    return -1;
+}
+
+int aeron_joinleave_asm_mcgroup(
+    aeron_socket_t socket,
+    int join,
+    const struct sockaddr_storage *multicast_addr,
+    const struct sockaddr_storage *interface_addr,
+    unsigned int multicast_if_index)
+{
+    const struct sockaddr_in *in4 = (const struct sockaddr_in *)multicast_addr;
+    const struct sockaddr_in6 *in6 = (const struct sockaddr_in6 *)multicast_addr;
+    if (multicast_addr->ss_family == AF_INET6)
+    {
+        struct ipv6_mreq ipv6mreq;
+        memset(&ipv6mreq, 0, sizeof(ipv6mreq));
+        ipv6mreq.ipv6mr_multiaddr = in6->sin6_addr;
+        ipv6mreq.ipv6mr_interface = multicast_if_index;
+        if (aeron_setsockopt(socket, IPPROTO_IPV6, join ? IPV6_JOIN_GROUP : IPV6_LEAVE_GROUP, &ipv6mreq, sizeof(ipv6mreq)) < 0)
+        {
+            aeron_set_err_from_last_err_code("%s ipv6 multicast failed", join ? "join" : "leave");
+            return -1;
+        }
+    }
+    else
+    {
+        struct sockaddr_in *interface_addr_in4 = (struct sockaddr_in *)interface_addr;
+        struct ip_mreq mreq;
+        mreq.imr_multiaddr.s_addr = in4->sin_addr.s_addr;
+        mreq.imr_interface.s_addr = interface_addr_in4->sin_addr.s_addr;
+        if (aeron_setsockopt(socket, IPPROTO_IP, join ? IP_ADD_MEMBERSHIP : IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) < 0)
+        {
+            aeron_set_err_from_last_err_code("%s ipv4 multicast failed", join ? "join" : "leave");
+            return -1;
+        }
+    }
+    return 0;
+}
+
+int aeron_joinleave_ssm_mcgroup(
+    aeron_socket_t socket,
+    int join,
+    const struct sockaddr_storage *src_addr,
+    const struct sockaddr_storage *multicast_addr,
+    const struct sockaddr_storage *interface_addr,
+    unsigned int multicast_if_index)
+{
+    if (multicast_addr->ss_family == AF_INET6)
+    {
+        struct group_source_req gsr;
+        memset(&gsr, 0, sizeof(gsr));
+        gsr.gsr_interface = multicast_if_index;
+        gsr.gsr_group = *multicast_addr;
+        gsr.gsr_source = *src_addr;
+        if (aeron_setsockopt(socket, IPPROTO_IPV6, join ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP, &gsr, sizeof(gsr)) < 0)
+        {
+            aeron_set_err_from_last_err_code("%s ipv6 source-specific multicast failed", join ? "join" : "leave");
+            return -1;
+        }
+    }
+    else
+    {
+        struct ip_mreq_source mreq;
+        memset(&mreq, 0, sizeof(mreq));
+        mreq.imr_sourceaddr = ((const struct sockaddr_in *)src_addr)->sin_addr;
+        mreq.imr_multiaddr = ((const struct sockaddr_in *)multicast_addr)->sin_addr;
+        mreq.imr_interface = ((const struct sockaddr_in *)interface_addr)->sin_addr;
+        if (aeron_setsockopt(socket, IPPROTO_IP, join ? IP_ADD_SOURCE_MEMBERSHIP : IP_DROP_SOURCE_MEMBERSHIP, &mreq, sizeof(mreq)) < 0)
+        {
+            aeron_set_err_from_last_err_code("%s ipv4 source-specific multicast failed", join ? "join" : "leave");
+            return -1;
+        }
+    }
+    return 0;
 }

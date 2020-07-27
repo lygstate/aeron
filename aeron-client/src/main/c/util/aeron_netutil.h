@@ -24,6 +24,13 @@
 
 #define AERON_NETUTIL_FORMATTED_MAX_LENGTH (INET6_ADDRSTRLEN + 8)
 
+enum aeron_socket_tran_purpose
+{
+    AERON_SOCKET_TRAN_QOS_UC,
+    AERON_SOCKET_TRAN_QOS_XMIT,
+    AERON_SOCKET_TRAN_QOS_RECV_MC
+};
+
 struct ifaddrs;
 struct addrinfo;
 
@@ -75,5 +82,31 @@ bool aeron_is_wildcard_addr(struct sockaddr_storage *addr);
 bool aeron_is_wildcard_port(struct sockaddr_storage *addr);
 
 int aeron_format_source_identity(char *buffer, size_t length, struct sockaddr_storage *addr);
+
+int aeron_udp_create_conn(
+    aeron_socket_t *sock_ptr,
+    enum aeron_socket_tran_purpose purpose,
+    size_t socket_min_rcvbuf_size,
+    size_t socket_min_sndbuf_size,
+    struct sockaddr_storage *bind_addr,
+    struct sockaddr_storage *interface_addr,
+    unsigned interface_no, unsigned ttl, unsigned loop,
+    unsigned dont_route,
+    int ip_tos);
+
+int aeron_joinleave_asm_mcgroup(
+    aeron_socket_t socket,
+    int join,
+    const struct sockaddr_storage *multicast_addr,
+    const struct sockaddr_storage *interface_addr,
+    unsigned int multicast_if_index);
+
+int aeron_joinleave_ssm_mcgroup(
+    aeron_socket_t socket,
+    int join,
+    const struct sockaddr_storage *src_addr,
+    const struct sockaddr_storage *multicast_addr,
+    const struct sockaddr_storage *interface_addr,
+    unsigned int multicast_if_index);
 
 #endif //AERON_NETUTIL_H
