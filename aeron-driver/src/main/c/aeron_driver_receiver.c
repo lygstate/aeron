@@ -36,23 +36,6 @@ int aeron_driver_receiver_init(
         return -1;
     }
 
-    for (size_t i = 0; i < AERON_DRIVER_RECEIVER_NUM_RECV_BUFFERS; i++)
-    {
-        size_t offset = 0;
-        if (aeron_alloc_aligned(
-            (void **)&receiver->recv_buffers.buffers[i],
-            &offset,
-            AERON_DRIVER_RECEIVER_MAX_UDP_PACKET_LENGTH,
-            AERON_CACHE_LINE_LENGTH) < 0)
-        {
-            aeron_set_err_from_last_err_code("%s:%d", __FILE__, __LINE__);
-            return -1;
-        }
-
-        receiver->recv_buffers.iov[i].iov_base = receiver->recv_buffers.buffers[i] + offset;
-        receiver->recv_buffers.iov[i].iov_len = AERON_DRIVER_RECEIVER_MAX_UDP_PACKET_LENGTH;
-    }
-
     if (aeron_udp_channel_data_paths_init(
         &receiver->data_paths,
         context->udp_channel_outgoing_interceptor_bindings,
@@ -113,7 +96,6 @@ void aeron_driver_receiver_on_command(void *clientd, volatile void *item)
 
 int aeron_driver_receiver_do_work(void *clientd)
 {
-    struct aeron_mmsghdr mmsghdr[AERON_DRIVER_RECEIVER_NUM_RECV_BUFFERS];
     aeron_driver_receiver_t *receiver = (aeron_driver_receiver_t *)clientd;
     int64_t bytes_received = 0;
     int work_count = 0;
@@ -121,21 +103,15 @@ int aeron_driver_receiver_do_work(void *clientd)
     work_count += (int)aeron_spsc_concurrent_array_queue_drain(
         receiver->receiver_proxy.command_queue, aeron_driver_receiver_on_command, receiver, 10);
 
-    for (size_t i = 0; i < AERON_DRIVER_RECEIVER_NUM_RECV_BUFFERS; i++)
-    {
-        mmsghdr[i].msg_hdr.msg_name = &receiver->recv_buffers.addrs[i];
-        mmsghdr[i].msg_hdr.msg_namelen = sizeof(receiver->recv_buffers.addrs[i]);
-        mmsghdr[i].msg_hdr.msg_iov = &receiver->recv_buffers.iov[i];
-        mmsghdr[i].msg_hdr.msg_iovlen = 1;
-        mmsghdr[i].msg_hdr.msg_flags = 0;
-        mmsghdr[i].msg_hdr.msg_control = NULL;
-        mmsghdr[i].msg_hdr.msg_controllen = 0;
-        mmsghdr[i].msg_len = 0;
-    }
+    aeron_udp_channel_recv_buffers_init(
+        receiver->msgvec,
+        AERON_DRIVER_RECEIVER_NUM_RECV_BUFFERS,
+        receiver->recv_buffers,
+        AERON_DRIVER_RECEIVER_MAX_UDP_PACKET_LENGTH);
 
     int poll_result = receiver->poller_poll_func(
         &receiver->poller,
-        mmsghdr,
+        receiver->msgvec,
         AERON_DRIVER_RECEIVER_NUM_RECV_BUFFERS,
         &bytes_received,
         receiver->data_paths.recv_func,
@@ -238,11 +214,6 @@ int aeron_driver_receiver_do_work(void *clientd)
 void aeron_driver_receiver_on_close(void *clientd)
 {
     aeron_driver_receiver_t *receiver = (aeron_driver_receiver_t *)clientd;
-
-    for (size_t i = 0; i < AERON_DRIVER_RECEIVER_NUM_RECV_BUFFERS; i++)
-    {
-        aeron_free(receiver->recv_buffers.buffers[i]);
-    }
 
     aeron_free(receiver->images.array);
     aeron_free(receiver->pending_setups.array);

@@ -86,9 +86,8 @@ typedef struct aeron_driver_name_resolver_stct
     aeron_position_t cache_size_counter;
     aeron_distinct_error_log_t *error_log;
 
-    struct sockaddr_storage received_address;
-    uint8_t *aligned_buffer;
-    uint8_t buffer[AERON_MAX_UDP_PAYLOAD_LENGTH + AERON_CACHE_LINE_LENGTH];
+    aeron_udp_channel_recv_buffer_t recv_buffers[AERON_NAME_RESOLVER_DRIVER_NUM_RECV_BUFFERS];
+    struct aeron_mmsghdr msgvec[AERON_NAME_RESOLVER_DRIVER_NUM_RECV_BUFFERS];
 }
 aeron_driver_name_resolver_t;
 
@@ -120,8 +119,6 @@ int aeron_driver_name_resolver_init(
         aeron_set_err_from_last_err_code("%s:%d", __FILE__, __LINE__);
         goto error_cleanup;
     }
-
-    _driver_resolver->aligned_buffer = aeron_cache_line_align_buffer(_driver_resolver->buffer);
 
     _driver_resolver->name = name;
     if (NULL == _driver_resolver->name)
@@ -575,27 +572,15 @@ void aeron_driver_name_resolver_receive(
 
 static int aeron_driver_name_resolver_poll(aeron_driver_name_resolver_t *resolver)
 {
-    struct aeron_mmsghdr mmsghdr[AERON_NAME_RESOLVER_DRIVER_NUM_RECV_BUFFERS];
-    struct iovec iov[AERON_NAME_RESOLVER_DRIVER_NUM_RECV_BUFFERS];
-    iov[0].iov_base = resolver->aligned_buffer;
-    iov[0].iov_len = AERON_MAX_UDP_PAYLOAD_LENGTH;
-
-    for (size_t i = 0; i < AERON_NAME_RESOLVER_DRIVER_NUM_RECV_BUFFERS; i++)
-    {
-        mmsghdr[i].msg_hdr.msg_name = &resolver->received_address;
-        mmsghdr[i].msg_hdr.msg_namelen = AERON_ADDR_LEN(&resolver->received_address);
-        mmsghdr[i].msg_hdr.msg_iov = &iov[i];
-        mmsghdr[i].msg_hdr.msg_iovlen = 1;
-        mmsghdr[i].msg_hdr.msg_flags = 0;
-        mmsghdr[i].msg_hdr.msg_control = NULL;
-        mmsghdr[i].msg_hdr.msg_controllen = 0;
-        mmsghdr[i].msg_len = 0;
-    }
-
+    aeron_udp_channel_recv_buffers_init(
+        resolver->msgvec,
+        AERON_NAME_RESOLVER_DRIVER_NUM_RECV_BUFFERS,
+        resolver->recv_buffers,
+        AERON_MAX_UDP_PAYLOAD_LENGTH);
     int64_t bytes_received = 0;
     int poll_result = resolver->transport_bindings->poller_poll_func(
         &resolver->poller,
-        mmsghdr,
+        resolver->msgvec,
         AERON_NAME_RESOLVER_DRIVER_NUM_RECV_BUFFERS,
         &bytes_received,
         resolver->data_paths.recv_func,
@@ -681,7 +666,7 @@ static int aeron_driver_name_resolver_send_self_resolutions(aeron_driver_name_re
 
     const size_t entry_offset = sizeof(aeron_frame_header_t);
 
-    uint8_t *aligned_buffer = resolver->aligned_buffer;
+    uint8_t *aligned_buffer = (uint8_t *)resolver->msgvec[0].msg_hdr.msg_iov->iov_base;
     aeron_frame_header_t *frame_header = (aeron_frame_header_t *)&aligned_buffer[0];
     aeron_resolution_header_t *resolution_header = (aeron_resolution_header_t *)&aligned_buffer[entry_offset];
 
@@ -769,7 +754,7 @@ static int aeron_driver_name_resolver_send_self_resolutions(aeron_driver_name_re
 
 static int aeron_driver_name_resolver_send_neighbor_resolutions(aeron_driver_name_resolver_t *resolver, int64_t now_ms)
 {
-    uint8_t *aligned_buffer = resolver->aligned_buffer;
+    uint8_t *aligned_buffer = (uint8_t *)resolver->msgvec[0].msg_hdr.msg_iov->iov_base;
     aeron_frame_header_t *frame_header = (aeron_frame_header_t *)aligned_buffer;
     frame_header->type = AERON_HDR_TYPE_RES;
     frame_header->flags = UINT8_C(0);
