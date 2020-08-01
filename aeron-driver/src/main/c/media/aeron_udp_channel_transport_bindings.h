@@ -20,6 +20,18 @@
 #include "uri/aeron_uri.h"
 #include "aeron_socket.h"
 #include "aeron_driver_common.h"
+#include "util/aeron_bitutil.h"
+
+#define AERON_DRIVER_MAX_UDP_PACKET_LENGTH (64 * 1024)
+#define AERON_MAX_UDP_PAYLOAD_BUFFER_LENGTH (AERON_DRIVER_MAX_UDP_PACKET_LENGTH + AERON_CACHE_LINE_LENGTH * 2)
+
+typedef struct aeron_udp_channel_recv_buffer_stct
+{
+    uint8_t buffer[AERON_MAX_UDP_PAYLOAD_BUFFER_LENGTH];
+    struct iovec iov;
+    struct sockaddr_storage addr;
+}
+aeron_udp_channel_recv_buffer_t;
 
 #define AERON_UDP_CHANNEL_TRANSPORT_MAX_INTERCEPTORS (2)
 
@@ -357,6 +369,12 @@ inline void aeron_udp_channel_incoming_interceptor_to_endpoint(
 
     func(NULL, transport, receiver_clientd, endpoint_clientd, destination_clientd, buffer, length, addr);
 }
+
+void aeron_udp_channel_recv_buffers_init(
+    struct aeron_mmsghdr *msgvec,
+    size_t vlen,
+    aeron_udp_channel_recv_buffer_t *buffers,
+    unsigned long iov_len);
 
 int aeron_udp_channel_data_paths_init(
     aeron_udp_channel_data_paths_t *data_paths,

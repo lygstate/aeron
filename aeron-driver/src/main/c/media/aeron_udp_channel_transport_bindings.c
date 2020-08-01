@@ -189,6 +189,28 @@ aeron_udp_channel_interceptor_bindings_t *aeron_udp_channel_interceptor_bindings
     return current_bindings;
 }
 
+void aeron_udp_channel_recv_buffers_init(
+    struct aeron_mmsghdr *msgvec,
+    size_t vlen,
+    aeron_udp_channel_recv_buffer_t *buffers,
+    unsigned long iov_len)
+{
+    for (size_t i = 0; i < vlen; i++)
+    {
+        buffers[i].iov.iov_base = (void *)aeron_cache_line_align_buffer(buffers[i].buffer);
+        buffers[i].iov.iov_len = iov_len;
+
+        msgvec[i].msg_hdr.msg_name = &(buffers[i].addr);
+        msgvec[i].msg_hdr.msg_namelen = sizeof(buffers[i].addr);
+        msgvec[i].msg_hdr.msg_iov = &buffers[i].iov;
+        msgvec[i].msg_hdr.msg_iovlen = 1;
+        msgvec[i].msg_hdr.msg_flags = 0;
+        msgvec[i].msg_hdr.msg_control = NULL;
+        msgvec[i].msg_hdr.msg_controllen = 0;
+        msgvec[i].msg_len = 0;
+    }
+}
+
 int aeron_udp_channel_data_paths_init(
     aeron_udp_channel_data_paths_t *data_paths,
     aeron_udp_channel_interceptor_bindings_t *outgoing_interceptor_bindings,
