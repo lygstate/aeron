@@ -206,7 +206,7 @@ void aeron_send_channel_endpoint_decref(void *clientd)
     }
 }
 
-int aeron_send_channel_sendmmsg(aeron_send_channel_endpoint_t *endpoint, struct aeron_mmsghdr *mmsghdr, size_t vlen)
+int aeron_send_channel_sendmmsg(aeron_send_channel_endpoint_t *endpoint, struct aeron_mmsghdr *msgvec, size_t vlen)
 {
     int result = 0;
 
@@ -214,35 +214,16 @@ int aeron_send_channel_sendmmsg(aeron_send_channel_endpoint_t *endpoint, struct 
     {
         for (size_t i = 0; i < vlen; i++)
         {
-            mmsghdr[i].msg_hdr.msg_name = &endpoint->current_data_addr;
-            mmsghdr[i].msg_hdr.msg_namelen = AERON_ADDR_LEN(&endpoint->current_data_addr);
+            msgvec[i].msg_hdr.msg_name = &endpoint->current_data_addr;
+            msgvec[i].msg_hdr.msg_namelen = AERON_ADDR_LEN(&endpoint->current_data_addr);
         }
 
-        result = endpoint->data_paths->sendmmsg_func(endpoint->data_paths, &endpoint->transport, mmsghdr, vlen);
+        result = endpoint->data_paths->sendmmsg_func(endpoint->data_paths, &endpoint->transport, msgvec, vlen);
     }
     else
     {
         result = aeron_udp_destination_tracker_sendmmsg(
-            endpoint->destination_tracker, &endpoint->transport, mmsghdr, vlen);
-    }
-
-    return result;
-}
-
-int aeron_send_channel_sendmsg(aeron_send_channel_endpoint_t *endpoint, struct msghdr *msghdr)
-{
-    int result = 0;
-
-    if (NULL == endpoint->destination_tracker)
-    {
-        msghdr->msg_name = &endpoint->current_data_addr;
-        msghdr->msg_namelen = AERON_ADDR_LEN(&endpoint->current_data_addr);
-
-        result = endpoint->data_paths->sendmsg_func(endpoint->data_paths, &endpoint->transport, msghdr);
-    }
-    else
-    {
-        result = aeron_udp_destination_tracker_sendmsg(endpoint->destination_tracker, &endpoint->transport, msghdr);
+            endpoint->destination_tracker, &endpoint->transport, msgvec, vlen);
     }
 
     return result;
