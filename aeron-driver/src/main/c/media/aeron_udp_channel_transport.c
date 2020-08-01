@@ -272,21 +272,6 @@ int aeron_udp_channel_transport_sendmmsg(
     return sendmmsg_result;
 }
 
-int aeron_udp_channel_transport_sendmsg(
-    aeron_udp_channel_data_paths_t *data_paths,
-    aeron_udp_channel_transport_t *transport,
-    struct msghdr *message)
-{
-    ssize_t sendmsg_result = sendmsg(transport->fd, message, 0);
-    if (sendmsg_result < 0)
-    {
-        aeron_set_err_from_last_err_code("sendmsg");
-        return -1;
-    }
-
-    return (int)sendmsg_result;
-}
-
 int aeron_udp_channel_transport_get_so_rcvbuf(aeron_udp_channel_transport_t *transport, size_t *so_rcvbuf)
 {
     socklen_t len = sizeof(size_t);

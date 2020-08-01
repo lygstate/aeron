@@ -77,8 +77,7 @@ int aeron_send_channel_endpoint_delete(
 void aeron_send_channel_endpoint_incref(void *clientd);
 void aeron_send_channel_endpoint_decref(void *clientd);
 
-int aeron_send_channel_sendmmsg(aeron_send_channel_endpoint_t *endpoint, struct aeron_mmsghdr *mmsghdr, size_t vlen);
-int aeron_send_channel_sendmsg(aeron_send_channel_endpoint_t *endpoint, struct msghdr *msghdr);
+int aeron_send_channel_sendmmsg(aeron_send_channel_endpoint_t *endpoint, struct aeron_mmsghdr *msgvec, size_t vlen);
 
 int aeron_send_channel_endpoint_add_publication(
     aeron_send_channel_endpoint_t *endpoint, aeron_network_publication_t *publication);

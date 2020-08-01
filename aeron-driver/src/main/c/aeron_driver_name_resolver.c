@@ -629,19 +629,20 @@ static int aeron_driver_name_resolver_do_send(
     struct sockaddr_storage *neighbor_address)
 {
     struct iovec iov[1];
-    struct msghdr msghdr;
+    struct aeron_mmsghdr msgvec[1];
 
     iov[0].iov_base = frame_header;
     iov[0].iov_len = (uint32_t)length;
-    msghdr.msg_iov = iov;
-    msghdr.msg_iovlen = 1;
-    msghdr.msg_flags = 0;
-    msghdr.msg_name = neighbor_address;
-    msghdr.msg_namelen = AERON_ADDR_LEN(neighbor_address);
-    msghdr.msg_control = NULL;
-    msghdr.msg_controllen = 0;
+    msgvec[0].msg_hdr.msg_iov = iov;
+    msgvec[0].msg_hdr.msg_iovlen = 1;
+    msgvec[0].msg_hdr.msg_flags = 0;
+    msgvec[0].msg_hdr.msg_name = neighbor_address;
+    msgvec[0].msg_hdr.msg_namelen = AERON_ADDR_LEN(neighbor_address);
+    msgvec[0].msg_hdr.msg_control = NULL;
+    msgvec[0].msg_hdr.msg_controllen = 0;
+    msgvec[0].msg_len = 0;
 
-    int send_result = resolver->data_paths.sendmsg_func(&resolver->data_paths, &resolver->transport, &msghdr);
+    int send_result = resolver->data_paths.sendmmsg_func(&resolver->data_paths, &resolver->transport, msgvec, 1);
     if (send_result >= 0)
     {
         if ((size_t)send_result != iov[0].iov_len)

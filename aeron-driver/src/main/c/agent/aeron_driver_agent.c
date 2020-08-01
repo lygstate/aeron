@@ -275,20 +275,6 @@ int aeron_driver_agent_outgoing_mmsg(
     return result;
 }
 
-int aeron_driver_agent_outgoing_msg(
-    void *interceptor_state,
-    aeron_udp_channel_outgoing_interceptor_t *delegate,
-    aeron_udp_channel_transport_t *transport,
-    struct msghdr *message)
-{
-    int result = delegate->outgoing_msg_func(
-        delegate->interceptor_state, delegate->next_interceptor, transport, message);
-
-    aeron_driver_agent_log_frame(AERON_FRAME_OUT, message, result, (int32_t)message->msg_iov[0].iov_len);
-
-    return result;
-}
-
 void aeron_driver_agent_incoming_msg(
     void *interceptor_state,
     aeron_udp_channel_incoming_interceptor_t *delegate,
@@ -385,7 +371,6 @@ int aeron_init_logging_events_interceptors(aeron_driver_context_t *context)
         incoming_bindings->outgoing_init_func = NULL;
         incoming_bindings->outgoing_close_func = NULL;
         incoming_bindings->outgoing_mmsg_func = NULL;
-        incoming_bindings->outgoing_msg_func = NULL;
         incoming_bindings->incoming_init_func = aeron_driver_agent_interceptor_init;
         incoming_bindings->incoming_close_func = NULL;
         incoming_bindings->incoming_func = aeron_driver_agent_incoming_msg;
@@ -430,7 +415,6 @@ int aeron_init_logging_events_interceptors(aeron_driver_context_t *context)
         outgoing_bindings->outgoing_init_func = aeron_driver_agent_interceptor_init;
         outgoing_bindings->outgoing_close_func = NULL;
         outgoing_bindings->outgoing_mmsg_func = aeron_driver_agent_outgoing_mmsg;
-        outgoing_bindings->outgoing_msg_func = aeron_driver_agent_outgoing_msg;
         outgoing_bindings->incoming_init_func = NULL;
         outgoing_bindings->incoming_close_func = NULL;
         outgoing_bindings->incoming_func = NULL;
