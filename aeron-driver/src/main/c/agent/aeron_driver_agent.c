@@ -39,14 +39,6 @@
 #include "aeron_alloc.h"
 #include "util/aeron_arrayutil.h"
 
-#if !defined(HAVE_STRUCT_MMSGHDR)
-struct mmsghdr
-{
-    struct msghdr msg_hdr;
-    unsigned int msg_len;
-};
-#endif
-
 typedef struct aeron_driver_agent_dynamic_dissector_entry_stct
 {
     aeron_driver_agent_generic_dissector_func_t dissector_func;
@@ -265,7 +257,7 @@ int aeron_driver_agent_outgoing_mmsg(
     void *interceptor_state,
     aeron_udp_channel_outgoing_interceptor_t *delegate,
     aeron_udp_channel_transport_t *transport,
-    struct mmsghdr *msgvec,
+    struct aeron_mmsghdr *msgvec,
     size_t vlen)
 {
     int result = delegate->outgoing_mmsg_func(
