@@ -26,7 +26,7 @@
 #include <errno.h>
 #include <string.h>
 
-#define AERON_DLL_EXPORTS
+#define AERON_NO_GETOPT
 
 #include "util/aeron_strutil.h"
 #include "aeron_windows.h"
@@ -122,7 +122,7 @@ int aeron_tokenise(char *input, const char delimiter, const int max_tokens, char
     return num_tokens;
 }
 
-#if defined(_MSC_VER) && !defined(AERON_NO_GETOPT)
+#if defined(_MSC_VER)
 
 /* Taken from https://github.com/skeeto/getopt/blob/master/getopt.h */
 /* A minimal POSIX getopt() implementation in ANSI C
@@ -138,8 +138,8 @@ int aeron_tokenise(char *input, const char delimiter, const int max_tokens, char
 
 static int opterr = 1;
 static int optopt;
-AERON_EXPORT int optind = 1;
-AERON_EXPORT char *optarg = NULL;
+int optind = 1;
+char *optarg = NULL;
 
 int getopt(int argc, char * const argv[], const char *optstring)
 {
