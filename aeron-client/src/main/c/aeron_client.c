@@ -51,7 +51,6 @@ int aeron_init(aeron_t **client, aeron_context_t *context)
 
     if (NULL == client || NULL == context)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_init: %s", strerror(EINVAL));
         goto error;
     }
@@ -110,7 +109,6 @@ int aeron_start(aeron_t *client)
 
     if (NULL == client)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_start: %s", strerror(EINVAL));
         return -1;
     }
@@ -139,7 +137,6 @@ int aeron_main_do_work(aeron_t *client)
 {
     if (NULL == client || !client->context->use_conductor_agent_invoker)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_dmain_do_work: %s", strerror(EINVAL));
         return -1;
     }
@@ -220,7 +217,6 @@ aeron_context_t *aeron_context(aeron_t *client)
 {
     if (NULL == client)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_context(NULL): %s", strerror(EINVAL));
         return NULL;
     }
@@ -232,7 +228,6 @@ int64_t aeron_client_id(aeron_t *client)
 {
     if (NULL == client)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_client_id(NULL): %s", strerror(EINVAL));
         return -1;
     }
@@ -244,7 +239,6 @@ int64_t aeron_next_correlation_id(aeron_t *client)
 {
     if (NULL == client)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_next_correlation_id(NULL): %s", strerror(EINVAL));
         return -1;
     }
@@ -256,7 +250,6 @@ aeron_counters_reader_t *aeron_counters_reader(aeron_t *client)
 {
     if (NULL == client)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_counters_reader(NULL): %s", strerror(EINVAL));
         return NULL;
     }
@@ -312,7 +305,6 @@ int aeron_async_add_publication(
 {
     if (NULL == async || NULL == client || NULL == uri)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_async_add_publication: %s", strerror(EINVAL));
         return -1;
     }
@@ -324,7 +316,6 @@ int aeron_async_add_publication_poll(aeron_publication_t **publication, aeron_as
 {
     if (NULL == publication || NULL == async || AERON_CLIENT_TYPE_PUBLICATION != async->type)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_async_add_publication_poll: %s", strerror(EINVAL));
         return -1;
     }
@@ -378,7 +369,6 @@ int aeron_async_add_exclusive_publication(
 {
     if (NULL == async || NULL == client || NULL == uri)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_async_add_exclusive_publication: %s", strerror(EINVAL));
         return -1;
     }
@@ -391,7 +381,6 @@ int aeron_async_add_exclusive_publication_poll(
 {
     if (NULL == publication || NULL == async || AERON_CLIENT_TYPE_EXCLUSIVE_PUBLICATION != async->type)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_async_add_exclusive_publication_poll: %s", strerror(EINVAL));
         return -1;
     }
@@ -452,7 +441,6 @@ int aeron_async_add_subscription(
 {
     if (NULL == async || NULL == client || NULL == uri)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_async_add_subscription: %s", strerror(EINVAL));
         return -1;
     }
@@ -472,7 +460,6 @@ int aeron_async_add_subscription_poll(aeron_subscription_t **subscription, aeron
 {
     if (NULL == subscription || NULL == async || AERON_CLIENT_TYPE_SUBSCRIPTION != async->type)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_async_add_subscription_poll: %s", strerror(EINVAL));
         return -1;
     }
@@ -532,7 +519,6 @@ int aeron_async_add_counter(
 {
     if (NULL == async || NULL == client)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_async_add_counter: %s", strerror(EINVAL));
         return -1;
     }
@@ -551,7 +537,6 @@ int aeron_async_add_counter_poll(aeron_counter_t **counter, aeron_async_add_coun
 {
     if (NULL == counter || NULL == async || AERON_CLIENT_TYPE_COUNTER != async->type)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_async_add_counter_poll: %s", strerror(EINVAL));
         return -1;
     }
@@ -604,7 +589,6 @@ static int aeron_async_destination_poll(aeron_async_destination_t *async)
 {
     if (NULL == async || AERON_CLIENT_TYPE_DESTINATION != async->type)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_async_add_counter_poll: %s", strerror(EINVAL));
         return -1;
     }
@@ -655,7 +639,6 @@ int aeron_publication_async_add_destination(
 {
     if (NULL == publication || uri == NULL)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "%s", strerror(EINVAL));
         return -1;
     }
@@ -676,7 +659,6 @@ int aeron_publication_async_remove_destination(
 {
     if (NULL == publication || uri == NULL)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "%s", strerror(EINVAL));
         return -1;
     }
@@ -689,7 +671,6 @@ int aeron_subscription_async_add_destination(
 {
     if (NULL == subscription || uri == NULL)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "%s", strerror(EINVAL));
         return -1;
     }
@@ -710,7 +691,6 @@ int aeron_subscription_async_remove_destination(
 {
     if (NULL == subscription || uri == NULL)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "%s", strerror(EINVAL));
         return -1;
     }
@@ -726,7 +706,6 @@ int aeron_exclusive_publication_async_add_destination(
 {
     if (NULL == publication || uri == NULL)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "%s", strerror(EINVAL));
         return -1;
     }
@@ -748,7 +727,6 @@ int aeron_exclusive_publication_async_remove_destination(
 {
     if (NULL == publication || uri == NULL)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "%s", strerror(EINVAL));
         return -1;
     }
@@ -776,7 +754,6 @@ int aeron_add_available_counter_handler(aeron_t *client, aeron_on_available_coun
 
     if (NULL == client || NULL == pair)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_add_available_counter_handler: %s", strerror(EINVAL));
         return -1;
     }
@@ -800,7 +777,6 @@ int aeron_remove_available_counter_handler(aeron_t *client, aeron_on_available_c
 
     if (NULL == client || NULL == pair)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_remove_available_counter_handler: %s", strerror(EINVAL));
         return -1;
     }
@@ -824,7 +800,6 @@ int aeron_add_unavailable_counter_handler(aeron_t *client, aeron_on_unavailable_
 
     if (NULL == client || NULL == pair)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_add_unavailable_counter_handler: %s", strerror(EINVAL));
         return -1;
     }
@@ -848,7 +823,6 @@ int aeron_remove_unavailable_counter_handler(aeron_t *client, aeron_on_unavailab
 
     if (NULL == client || NULL == pair)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_remove_unavailable_counter_handler: %s", strerror(EINVAL));
         return -1;
     }
@@ -872,7 +846,6 @@ int aeron_add_close_handler(aeron_t *client, aeron_on_close_client_pair_t *pair)
 
     if (NULL == client || NULL == pair)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_add_close_handler: %s", strerror(EINVAL));
         return -1;
     }
@@ -896,7 +869,6 @@ int aeron_remove_close_handler(aeron_t *client, aeron_on_close_client_pair_t *pa
 
     if (NULL == client || NULL == pair)
     {
-        errno = EINVAL;
         aeron_set_err(EINVAL, "aeron_remove_close_handler: %s", strerror(EINVAL));
         return -1;
     }
