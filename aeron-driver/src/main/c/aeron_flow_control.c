@@ -308,7 +308,7 @@ int aeron_flow_control_parse_tagged_options(
                     (int)value_length, value,
                     (int)options_length, options);
 
-                return -EINVAL;
+                return -1;
             }
             strncpy(number_buffer, value, value_length);
             number_buffer[value_length] = '\0';
@@ -334,7 +334,7 @@ int aeron_flow_control_parse_tagged_options(
                         (int)current_option_length, current_option,
                         (int)options_length, options);
 
-                    return -EINVAL;
+                    return -1;
                 }
 
                 if (has_group_min_size)
@@ -361,7 +361,7 @@ int aeron_flow_control_parse_tagged_options(
                             (int)current_option_length, current_option,
                             (int)options_length, options);
 
-                        return -EINVAL;
+                        return -1;
                     }
                 }
             }
@@ -381,7 +381,7 @@ int aeron_flow_control_parse_tagged_options(
                         (int)current_option_length, current_option,
                         (int)options_length, options);
 
-                    return -EINVAL;
+                    return -1;
                 }
             }
         }
@@ -393,7 +393,7 @@ int aeron_flow_control_parse_tagged_options(
                 (int)current_option_length, current_option,
                 (int)options_length, options);
 
-            return -EINVAL;
+            return -1;
         }
 
         current_option = next_option;
