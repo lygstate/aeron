@@ -134,11 +134,15 @@ add_library(aeron_client STATIC ${SOURCE} ${HEADERS})
 add_library(aeron_client_shared SHARED ${SOURCE} ${HEADERS})
 
 target_include_directories(aeron_client
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+    PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${AERON_C_CLIENT_SOURCE_PATH}
     )
 
 target_include_directories(aeron_client_shared
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+    PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${AERON_C_CLIENT_SOURCE_PATH}
     )
 
 if (MSVC)
