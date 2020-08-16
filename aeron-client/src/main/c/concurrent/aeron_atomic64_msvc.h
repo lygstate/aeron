@@ -19,9 +19,28 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <winsock2.h>
-#include <windows.h>
 #include <intrin.h>
+
+#if defined(_M_X64)
+#define AeronMemoryBarrier __faststorefence
+#elif defined(_M_IX86)
+__forceinline
+void
+AeronMemoryBarrier(
+    void
+    )
+{
+    long Barrier;
+    _InterlockedOr(&Barrier, 0);
+    return;
+}
+#elif defined(_M_IA64)
+#define AeronMemoryBarrier __mf
+#elif defined(_M_ARM)
+#define AeronMemoryBarrier()             __dmb(_ARM_BARRIER_SY)
+#elif defined(_M_ARM64) || defined(_M_HYBRID_X86_ARM64)
+#define AeronMemoryBarrier()             __dmb(_ARM64_BARRIER_SY)
+#endif
 
 #define AERON_GET_VOLATILE(dst, src) \
 do \
@@ -45,22 +64,29 @@ do \
     _ReadWriteBarrier(); \
     dst = src; \
     _ReadWriteBarrier(); \
-    MemoryBarrier(); \
+    AeronMemoryBarrier(); \
 } \
 while (false)
 
 inline int64_t aeron_get_and_add_int64(volatile int64_t *current, int64_t value)
 {
-    int64_t original;
-    original = _InlineInterlockedAdd64((long long volatile *)current, (long long)value) - value;
-    return original;
+#if defined(_M_IX86)
+    int64_t old;
+    do {
+        old = *current;
+    } while (_InterlockedCompareExchange64(
+        (long long volatile *)current,
+        (long long)(old + value),
+        (long long)old) != old);
+    return old;
+#else
+    return _InterlockedExchangeAdd64(current, value);
+#endif
 }
 
 inline int32_t aeron_get_and_add_int32(volatile int32_t *current, int32_t value)
 {
-    int32_t original;
-    original = _InlineInterlockedAdd((long volatile *)current, (long)value) - value;
-    return original;
+    return _InterlockedExchangeAdd((long volatile *)current, (long)value);
 }
 
 inline bool aeron_cmpxchg64(volatile int64_t *destination, int64_t expected, int64_t desired)
