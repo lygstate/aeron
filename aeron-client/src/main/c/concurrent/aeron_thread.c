@@ -177,6 +177,10 @@ int aeron_thread_create(aeron_thread_t *thread_ptr, void *attr, void *(*callback
     return 0;
 }
 
+// The SetThreadDescription API was brought in version 1607 of Windows 10.
+typedef HRESULT(WINAPI* SetThreadDescriptionAPI)(HANDLE hThread,
+                                              PCWSTR lpThreadDescription);
+
 void aeron_thread_set_name(const char *role_name)
 {
     size_t wchar_count = mbstowcs(NULL, role_name, 0);
@@ -187,7 +191,14 @@ void aeron_thread_set_name(const char *role_name)
     }
 
     mbstowcs(buf, role_name, wchar_count + 1);
-    SetThreadDescription(GetCurrentThread(), buf);
+
+    // The SetThreadDescription API works even if no debugger is attached.
+    SetThreadDescriptionAPI set_thread_description_func =
+        (SetThreadDescriptionAPI)GetProcAddress(
+        GetModuleHandleW(L"Kernel32.dll"), "SetThreadDescription");
+    if (set_thread_description_func) {
+        set_thread_description_func(GetCurrentThread(), buf);
+    }
 
     aeron_free(buf);
 }
