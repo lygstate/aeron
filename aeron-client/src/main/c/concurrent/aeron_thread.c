@@ -21,7 +21,7 @@
 
 #include "aeron_alloc.h"
 #include "concurrent/aeron_thread.h"
-#if !defined(_WIN32)
+#if !defined(AERON_OS_WIN32)
 #include <unistd.h>
 #else
 #include <windows.h>
@@ -40,7 +40,7 @@ struct aeron_thread_stct
 
 void aeron_nano_sleep(uint64_t nanoseconds)
 {
-#ifdef AERON_COMPILER_MSVC
+#ifdef AERON_OS_WIN32
     HANDLE timer = CreateWaitableTimer(NULL, TRUE, NULL);
     if (!timer)
     {
@@ -72,14 +72,14 @@ void aeron_nano_sleep(uint64_t nanoseconds)
 
 void aeron_micro_sleep(size_t microseconds)
 {
-#ifdef _WIN32
+#ifdef AERON_OS_WIN32
     aeron_nano_sleep(1000 * microseconds);
 #else
     usleep(microseconds);
 #endif
 }
 
-#if defined(AERON_COMPILER_GCC)
+#if defined(AERON_OS_POSIX)
 
 void aeron_thread_set_name(const char *role_name)
 {
@@ -90,7 +90,7 @@ void aeron_thread_set_name(const char *role_name)
 #endif
 }
 
-#elif defined(AERON_COMPILER_MSVC)
+#elif defined(AERON_OS_WIN32)
 
 static BOOL WINAPI aeron_thread_once_callback(PINIT_ONCE init_once, void (*callback)(void), void **context)
 {
@@ -285,7 +285,7 @@ int sched_yield(void)
 
  // sched
 
-#if defined(AERON_COMPILER_GCC)
+#if defined(AERON_OS_POSIX)
 
 #include <sched.h>
 
@@ -294,7 +294,7 @@ void proc_yield()
     __asm__ volatile("pause\n": : : "memory");
 }
 
-#elif defined(AERON_COMPILER_MSVC)
+#elif defined(AERON_OS_WIN32)
 
 #else
 #error Unsupported platform!

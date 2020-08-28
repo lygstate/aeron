@@ -27,7 +27,7 @@ void aeron_thread_set_name(const char *role_name);
 void aeron_nano_sleep(uint64_t nanoseconds);
 void aeron_micro_sleep(size_t microseconds);
 
-#if defined(AERON_COMPILER_GCC)
+#if defined(AERON_OS_POSIX)
 
 #include <pthread.h>
 typedef pthread_mutex_t aeron_mutex_t;
@@ -48,7 +48,7 @@ typedef pthread_t aeron_thread_t;
 #define aeron_thread_get_specific pthread_getspecific
 #define aeron_thread_set_specific pthread_setspecific
 
-#elif defined(AERON_COMPILER_MSVC)
+#elif defined(AERON_OS_WIN32)
 
 typedef void *aeron_mutex_t;
 
@@ -93,11 +93,11 @@ void *aeron_thread_get_specific(pthread_key_t key);
 
 // sched
 
-#if defined(AERON_COMPILER_GCC)
+#if defined(AERON_OS_POSIX)
 
 void proc_yield();
 
-#elif defined(AERON_COMPILER_MSVC)
+#elif defined(AERON_OS_WIN32)
 
 int sched_yield(void);
 #define proc_yield _mm_pause

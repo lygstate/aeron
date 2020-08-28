@@ -20,6 +20,15 @@
  * Determine platform, compiler, and CPU and set defines to be used later.
  * Also, error out here if on a platform that is not supported.
  */
+#if defined(_WIN32)
+#define AERON_OS_WIN32 1
+#elif defined(__linux__)
+#define AERON_OS_LINUX 1
+#endif
+
+#if defined(__GNUC__) && !defined(AERON_OS_WIN32)
+#define AERON_OS_POSIX 1
+#endif
 
 #if defined(_MSC_VER)
     #define AERON_COMPILER_MSVC 1

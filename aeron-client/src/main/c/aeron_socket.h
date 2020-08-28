@@ -21,7 +21,7 @@
 #include <stdbool.h>
 #include "util/aeron_platform.h"
 
-#if defined(AERON_COMPILER_GCC)
+#if defined(AERON_OS_POSIX)
 
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -33,7 +33,7 @@
 
 typedef int aeron_socket_t;
 
-#elif defined(AERON_COMPILER_MSVC)
+#elif defined(AERON_OS_WIN32)
 #if !defined(_INC_WINDOWS)
 
 #define POLLRDNORM  0x0100
@@ -156,7 +156,7 @@ typedef int aeron_socket_t;
                                     // function returns CF_ACCEPT
 #define SO_PAUSE_ACCEPT 0x3003      // pause accepting new connections
 #define SO_COMPARTMENT_ID 0x3004    // get/set the compartment for a socket
-#if (_WIN32_WINNT >= 0x0600)
+#if (AERON_OS_WIN32_WINNT >= 0x0600)
 #define SO_RANDOMIZE_PORT 0x3005    // randomize assignment of wildcard ports
 #define SO_PORT_SCALABILITY 0x3006  // enable port scalability
 #define SO_REUSE_UNICASTPORT 0x3007 // defer ephemeral port allocation for
@@ -166,7 +166,7 @@ typedef int aeron_socket_t;
 #define SO_MSG_SEGMENT_SIZE 0x300C  // Segment sends into datagrams of length
                                     // MSG_SEGMENT_SIZE. The final datagram is
                                     // less than or equal to MSG_SEGMENT_SIZE.
-#endif //(_WIN32_WINNT >= 0x0600)
+#endif //(AERON_OS_WIN32_WINNT >= 0x0600)
 
 #define IP_DEFAULT_MULTICAST_TTL   1    /* normally limit m'casts to 1 hop  */
 #define IP_DEFAULT_MULTICAST_LOOP  1    /* normally hear sends if a member  */
