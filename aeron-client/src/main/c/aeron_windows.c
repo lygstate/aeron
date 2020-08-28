@@ -32,32 +32,6 @@
 #define __builtin_popcount __popcnt
 #define __builtin_popcountll __popcnt64
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
-{
-    switch (fdwReason)
-    {
-        case DLL_PROCESS_ATTACH:
-            if (!aeron_error_dll_process_attach())
-            {
-                return FALSE;
-            }
-            break;
-
-        case DLL_THREAD_DETACH:
-            aeron_error_dll_thread_detach();
-            break;
-
-        case DLL_PROCESS_DETACH:
-            aeron_error_dll_process_detach();
-            break;
-
-        default:
-            break;
-    }
-
-    return TRUE;
-}
-
 typedef struct { UINT64 q[2]; } aeron_uint128_t;
 
 aeron_uint128_t make_aeron_uint128_t(UINT64 x)
