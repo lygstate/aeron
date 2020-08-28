@@ -20,7 +20,7 @@
 #include "util/aeron_bitutil.h"
 #include "aeron_alloc.h"
 
-#if defined(AERON_COMPILER_MSVC)
+#if defined(AERON_OS_WIN32)
 #include <windows.h>
 #endif
 
@@ -45,7 +45,7 @@ int aeron_alloc(void **ptr, size_t size)
     if (NULL == *ptr)
     {
         errno = ENOMEM;
-#if defined(AERON_COMPILER_MSVC)
+#if defined(AERON_OS_WIN32)
         SetLastError(ERROR_OUTOFMEMORY);
 #endif
         return -1;
@@ -61,7 +61,7 @@ int aeron_alloc_aligned(void **ptr, size_t *offset, size_t size, size_t alignmen
     if (!(AERON_IS_POWER_OF_TWO(alignment)))
     {
         errno = EINVAL;
-#if defined(AERON_COMPILER_MSVC)
+#if defined(AERON_OS_WIN32)
         SetLastError(ERROR_INCORRECT_SIZE);
 #endif
         return -1;
@@ -81,7 +81,7 @@ int aeron_alloc_aligned(void **ptr, size_t *offset, size_t size, size_t alignmen
 
 int aeron_reallocf(void **ptr, size_t size)
 {
-#if defined(__linux__) || defined(AERON_COMPILER_MSVC)
+#if defined(__linux__) || defined(AERON_OS_WIN32)
     /* mimic reallocf */
     if ((*ptr = realloc(*ptr, size)) == NULL)
     {
@@ -93,7 +93,7 @@ int aeron_reallocf(void **ptr, size_t size)
         {
             free(*ptr);
             errno = ENOMEM;
-#if defined(AERON_COMPILER_MSVC)
+#if defined(AERON_OS_WIN32)
             SetLastError(ERROR_OUTOFMEMORY);
 #endif
             return -1;

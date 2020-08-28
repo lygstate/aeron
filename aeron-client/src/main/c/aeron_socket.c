@@ -24,7 +24,7 @@
 
 #include "util/aeron_platform.h"
 
-#if defined(AERON_COMPILER_MSVC)
+#if defined(AERON_OS_WIN32)
 #include <winsock2.h>
 #include <windows.h>
 #include <ws2ipdef.h>
@@ -36,7 +36,7 @@
 #include "util/aeron_error.h"
 #include "aeron_socket.h"
 
-#if defined(AERON_COMPILER_GCC)
+#if defined(AERON_OS_POSIX)
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -73,7 +73,7 @@ void aeron_close_socket(aeron_socket_t socket)
     close(socket);
 }
 
-#elif defined(AERON_COMPILER_MSVC)
+#elif defined(AERON_OS_WIN32)
 
 #if _WIN32_WINNT < 0x0600
 #error Unsupported windows version

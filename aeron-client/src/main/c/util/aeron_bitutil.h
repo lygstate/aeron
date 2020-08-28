@@ -22,7 +22,7 @@
 #include <stddef.h>
 #include "util/aeron_platform.h"
 
-#if defined(AERON_COMPILER_MSVC)
+#if defined(AERON_OS_WIN32)
 #include <intrin.h>
 #endif
 
@@ -56,7 +56,7 @@ inline int aeron_number_of_trailing_zeroes(int32_t value)
     }
 
     return __builtin_ctz(value);
-#elif defined(_MSC_VER)
+#elif defined(AERON_OS_WIN32)
     unsigned long r;
 
     if (_BitScanForward(&r, (unsigned long)value))
@@ -94,7 +94,7 @@ inline int aeron_number_of_trailing_zeroes_u64(uint64_t value)
     }
 
     return __builtin_ctzll(value);
-#elif defined(_MSC_VER) && defined(AERON_CPU_X64)
+#elif defined(AERON_OS_WIN32) && defined(AERON_CPU_X64)
     unsigned long r;
 
     if (_BitScanForward64(&r, (__int64)value))
@@ -120,7 +120,7 @@ inline int aeron_number_of_leading_zeroes(int32_t value)
     }
 
     return __builtin_clz(value);
-#elif defined(_MSC_VER)
+#elif defined(AERON_OS_WIN32)
     unsigned long r;
 
     if (_BitScanReverse(&r, (unsigned long)value))

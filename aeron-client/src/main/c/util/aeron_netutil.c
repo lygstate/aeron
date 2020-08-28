@@ -30,7 +30,7 @@
 
 #if defined(AERON_COMPILER_GCC)
 
-#elif defined(AERON_COMPILER_MSVC)
+#elif defined(AERON_OS_WIN32)
 #include <intrin.h>
 #define __builtin_bswap32 _byteswap_ulong
 #define __builtin_bswap64 _byteswap_uint64

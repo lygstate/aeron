@@ -33,7 +33,7 @@ void aeron_set_errno(int errcode);
 void aeron_set_err_from_last_err_code(const char *format, ...);
 const char *aeron_error_code_str(int errcode);
 
-#if defined(AERON_COMPILER_MSVC)
+#if defined(AERON_OS_WIN32)
 bool aeron_error_dll_process_attach();
 void aeron_error_dll_thread_detach();
 void aeron_error_dll_process_detach();

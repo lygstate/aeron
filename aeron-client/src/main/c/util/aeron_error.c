@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
 #include <memory.h>
 #include <errno.h>
 
@@ -25,13 +26,13 @@
 #include "aeron_alloc.h"
 #include "command/aeron_control_protocol.h"
 
-#if defined(AERON_COMPILER_MSVC)
+#if defined(AERON_OS_WIN32)
 #include <windows.h>
 #endif
 
 static AERON_INIT_ONCE error_is_initialized = AERON_INIT_ONCE_VALUE;
 
-#if defined(AERON_COMPILER_MSVC)
+#if defined(AERON_OS_WIN32)
 static pthread_key_t error_key = TLS_OUT_OF_INDEXES;
 #else
 static pthread_key_t error_key;
@@ -48,7 +49,7 @@ static void initialize_per_thread_error()
 
 static void initialize_error()
 {
-#if defined(AERON_COMPILER_MSVC)
+#if defined(AERON_OS_WIN32)
     if (error_key != TLS_OUT_OF_INDEXES)
     {
         return;
@@ -131,7 +132,7 @@ void aeron_set_err(int errcode, const char *format, ...)
 void aeron_set_errno(int errcode)
 {
     errno = errcode;
-#if defined(AERON_COMPILER_MSVC)
+#if defined(AERON_OS_WIN32)
     switch (errcode)
     {
         case 0:
@@ -154,7 +155,7 @@ void aeron_set_errno(int errcode)
 
 void aeron_set_err_from_last_err_code(const char *format, ...)
 {
-#if defined(AERON_COMPILER_MSVC)
+#if defined(AERON_OS_WIN32)
     int errcode = (int)GetLastError();
 #else
     int errcode = errno;
@@ -178,7 +179,7 @@ void aeron_set_err_from_last_err_code(const char *format, ...)
 
     strncpy(error_state->errmsg, stack_message, sizeof(error_state->errmsg));
 
-#if defined(AERON_COMPILER_MSVC)
+#if defined(AERON_OS_WIN32)
     int length = (int)FormatMessageA(
         FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
         NULL,
@@ -245,7 +246,7 @@ const char *aeron_error_code_str(int errcode)
     }
 }
 
-#if defined(AERON_COMPILER_MSVC)
+#if defined(AERON_OS_WIN32)
 
 bool aeron_error_dll_process_attach()
 {
