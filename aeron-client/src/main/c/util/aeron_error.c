@@ -288,4 +288,29 @@ void aeron_error_dll_process_detach()
     error_key = TLS_OUT_OF_INDEXES;
 }
 
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
+{
+    switch (fdwReason)
+    {
+        case DLL_PROCESS_ATTACH:
+            if (!aeron_error_dll_process_attach())
+            {
+                return FALSE;
+            }
+            break;
+
+        case DLL_THREAD_DETACH:
+            aeron_error_dll_thread_detach();
+            break;
+
+        case DLL_PROCESS_DETACH:
+            aeron_error_dll_process_detach();
+            break;
+
+        default:
+            break;
+    }
+
+    return TRUE;
+}
 #endif
