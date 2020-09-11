@@ -178,7 +178,7 @@ int main(int argc, char **argv)
                 .sessionId();
             std::cout << " at position=" << image.position() << " from " << image.sourceIdentity() << std::endl;
 
-//            if (image.subscriptionRegistrationId() == subscriptionId)
+            if (image.subscriptionRegistrationId() == subscriptionId)
             {
                 countDown--;
             }
@@ -191,6 +191,8 @@ int main(int argc, char **argv)
             std::cout << " at position=" << image.position() << " from " << image.sourceIdentity() << std::endl;
         };
 
+        context.availableImageHandler(availableImageHandler);
+        context.unavailableImageHandler(unavailableImageHandler);
         context.preTouchMappedMemory(true);
 
         Aeron aeron(context);
