@@ -4,7 +4,7 @@
        // "-DAERON_SYSTEM_TESTS=OFF",
        "-DBUILD_AERON_ARCHIVE_API:BOOL=ON"
     ],
-    "cmake.ctest.parallelJobs": 10,
+    "cmake.ctest.parallelJobs": 1,
     "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools",
     "files.exclude": {
         "**/.classpath": true,
